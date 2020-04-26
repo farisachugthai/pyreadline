@@ -7,8 +7,62 @@ Commands to bind to
 
 This appendix will contain descriptions of all commands to bind to.
 
+Configuration file
+------------------
+
+The configuration file is read from the users home directory and is named
+pyreadlineconfig.ini. The files syntax is not the same as for GNU readline but
+a python syntax is used instead. The available commands are:
+
+
+    bind_exit_key
+      is used to bind the keys that are used to exit the interpreter. (Ctrl-d,
+      ctrl-z)
+
+    bind_key
+      is used to bind keys to editor functions
+
+    un_bind_key
+      is used to unbind keys can be useful to unbind default bindings the user
+      does not like
+
+    bell_style
+      is used to set bell style. (none|visible|audible)
+
+    show_all_if_ambiguous
+      is used to enable the showing of a list of all alternative for tab
+      completion (on|off)
+
+    mark_directories
+      show directories (on|off)
+
+    completer_delims
+      Which delimeters should be used to separate words for tab completion
+
+    debug_output
+      Turn on debug output (on|off). Not implemented yet.
+
+    disable_readline
+      Disable pyreadline completely (True|False).
+
+    allow_ctrl_c
+      Allows use of ctrl-c as copy key, still propagate keyboardinterrupt when not waiting for input.
+
+    ctrl_c_tap_time_interval
+      Set the ctrl-c double tap time interval to be used before issuing a KeyboadInterupt. Used
+      to be able to have ctrl-c bound to copy.
+
+    history_filename
+      Set name of history file. Default is %USERPROFILE%/.pythonhistory
+
+    history_length
+      Set max length of history file default 200
+      
+
 .. For now you have to look in the sourcecode. Check the readline class of the file rlmain.py
    Let's add them! Btw bindable isn't a word.
+
+Methods as defined by the ReadLineTextBuffer
 
 .. class:: ReadLineTextBuffer(txtstr, point=None, mark=None, kwargs)
 
