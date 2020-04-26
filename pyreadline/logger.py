@@ -7,7 +7,9 @@
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
 
-import socket, logging, logging.handlers
+import socket
+import logging
+import logging.handlers
 from pyreadline.unicode_helper import ensure_str
 
 host = "localhost"

@@ -6,7 +6,9 @@
 #  the file COPYING, distributed as part of this software.
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
-import re, operator, sys
+import re
+import operator
+import sys
 
 from . import wordmatcher
 import pyreadline.clipboard as clipboard
@@ -495,7 +497,7 @@ class ReadLineTextBuffer(TextLine):
         if self.enable_win32_clipboard:
             clipboard.set_clipboard_text(self.get_line_text())
 
-    ######### Movement
+    # Movement
 
     def beginning_of_line(self):
         self.selection_mark = -1
@@ -547,7 +549,7 @@ class ReadLineTextBuffer(TextLine):
         for x in range(argument):
             self.point = NextWordEnd
 
-    ######### Movement select
+    # Movement select
     def beginning_of_line_extend_selection(self):
         if self.enable_selection and self.selection_mark < 0:
             self.selection_mark = self.point
@@ -606,7 +608,7 @@ class ReadLineTextBuffer(TextLine):
         for x in range(argument):
             self.point = PrevWordEnd
 
-    ######### delete
+    # delete
 
     def delete_selection(self):
         if self.enable_selection and self.selection_mark >= 0:
@@ -665,7 +667,7 @@ class ReadLineTextBuffer(TextLine):
             del self[PrevWordEnd:NextWordStart]
         self.selection_mark = -1
 
-    ######### Case
+    # Case
 
     def upcase_word(self):
         p = self.point
@@ -691,7 +693,7 @@ class ReadLineTextBuffer(TextLine):
         except NotAWordError:
             pass
 
-    ########### Transpose
+    # Transpose
     def transpose_chars(self):
         p2 = Point(self)
         if p2 == 0:
@@ -719,7 +721,7 @@ class ReadLineTextBuffer(TextLine):
         self[start1:stop1] = word2[Point:NextWordEnd]
         self.point = stop2
 
-    ############ Kill
+    # Kill
 
     def kill_line(self):
         self.add_to_kill_ring(self[self.point :])
@@ -775,7 +777,7 @@ class ReadLineTextBuffer(TextLine):
     def yank_pop(self):
         pass
 
-    ##############  Mark
+    # Mark
 
     def set_mark(self):
         self.mark = self.point
@@ -815,9 +817,9 @@ class ReadLineTextBuffer(TextLine):
         self.copy_selection_to_clipboard()
         self.delete_selection()
 
-    ##############  Paste
+    # Paste
 
-    ############## Kill ring
+    # Kill ring
     def add_to_kill_ring(self, txt):
         self.kill_ring = [txt]
         if kill_ring_to_clipboard:

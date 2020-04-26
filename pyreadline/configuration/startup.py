@@ -6,7 +6,8 @@ try:
     import pyreadline.rlmain
 
     # pyreadline.rlmain.config_path=r"c:\xxx\pyreadlineconfig.ini"
-    import readline, atexit
+    import readline
+    import atexit
     import pyreadline.unicode_helper
 
     #

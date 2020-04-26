@@ -26,27 +26,25 @@ from __future__ import print_function, unicode_literals, absolute_import
 #
 # primitive debug printing that won't interfere with the screen
 
-import clr, sys
-
-clr.AddReferenceToFileAndPath(sys.executable)
-import IronPythonConsole
-
-import sys
-import re
-import os
-
-import System
-
-from .event import Event
-from pyreadline.logger import log
-
+from pyreadline.console.ansi import AnsiState
 from pyreadline.keysyms import (
     make_keysym,
     make_keyinfo,
     make_KeyPress,
     make_KeyPress_from_keydescr,
 )
-from pyreadline.console.ansi import AnsiState
+from pyreadline.logger import log
+from .event import Event
+import System
+import os
+import re
+import sys
+import IronPythonConsole
+import clr
+import sys
+
+clr.AddReferenceToFileAndPath(sys.executable)
+
 
 color = System.ConsoleColor
 
@@ -447,7 +445,8 @@ def install_readline(hook):
 
 
 if __name__ == "__main__":
-    import time, sys
+    import time
+    import sys
 
     c = Console(0)
     sys.stdout = c

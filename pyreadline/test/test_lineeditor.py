@@ -1,12 +1,13 @@
 # Copyright (C) 2006  Michael Graz. <mgraz@plan10.com>
 from __future__ import print_function, unicode_literals, absolute_import
 
-import sys, unittest
+from pyreadline.lineeditor import lineobj
+import sys
+import unittest
 
 sys.path.append("../..")
 # from pyreadline.modes.vi import *
 # from pyreadline import keysyms
-from pyreadline.lineeditor import lineobj
 
 # ----------------------------------------------------------------------
 

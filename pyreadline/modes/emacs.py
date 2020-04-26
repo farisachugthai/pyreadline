@@ -7,7 +7,9 @@
 #  the file COPYING, distributed as part of this software.
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
-import os, sys, time
+import os
+import sys
+import time
 import pyreadline.logger as logger
 from pyreadline.logger import log
 from pyreadline.lineeditor.lineobj import Point
@@ -298,7 +300,7 @@ class EmacsMode(
         self.previous_func = dispatch_func
         return r
 
-    #########  History commands
+    # History commands
     def previous_history(self, e):  # (C-p)
         """Move back through the history list, fetching the previous
         command. """

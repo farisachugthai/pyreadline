@@ -8,16 +8,17 @@
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
 
-import sys, unittest
+import pyreadline.logger as logger
+from pyreadline.logger import log
+from pyreadline.test.common import *
+from pyreadline.lineeditor import lineobj
+from pyreadline import keysyms
+from pyreadline.modes.emacs import *
+import sys
+import unittest
 
 sys.path.insert(0, "../..")
-from pyreadline.modes.emacs import *
-from pyreadline import keysyms
-from pyreadline.lineeditor import lineobj
 
-from pyreadline.test.common import *
-from pyreadline.logger import log
-import pyreadline.logger as logger
 
 logger.sock_silent = True
 logger.show_event = ["debug"]

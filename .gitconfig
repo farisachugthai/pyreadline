@@ -1,0 +1,4 @@
+# line ending consistency
+[core]
+    eol = lf
+	ignorecase = false

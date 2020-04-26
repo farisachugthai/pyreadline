@@ -91,7 +91,7 @@ class NotEmacsMode(basemode.BaseMode):
         log("returning(%s)" % self.l_buffer.get_line_text())
         return self.l_buffer.get_line_text() + "\n"
 
-    ### Methods below here are bindable emacs functions
+    # Methods below here are bindable emacs functions
 
     def beginning_of_line(self, e):  # (C-a)
         """Move to the start of the current line. """
@@ -135,7 +135,7 @@ class NotEmacsMode(basemode.BaseMode):
         history line is restored to its original state."""
         return True
 
-    #########  History commands
+    # History commands
     def previous_history(self, e):  # (C-p)
         """Move back through the history list, fetching the previous command. """
         self._history.previous_history(self.l_buffer)

@@ -1,5 +1,6 @@
 from __future__ import print_function, unicode_literals, absolute_import
-import glob, sys
+import glob
+import sys
 
 success = False
 in_ironpython = "IronPython" in sys.version

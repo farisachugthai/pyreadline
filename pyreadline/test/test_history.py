@@ -2,19 +2,20 @@
 # Copyright (C) 2007 Jörgen Stenarson. <>
 from __future__ import print_function, unicode_literals, absolute_import
 
-import sys, unittest
+from pyreadline.logger import log
+import pyreadline.logger
+import pyreadline.lineeditor.history as history
+from pyreadline.lineeditor.history import LineHistory
+from pyreadline.lineeditor import lineobj
+import sys
+import unittest
 
 sys.path.append("../..")
 # from pyreadline.modes.vi import *
 # from pyreadline import keysyms
-from pyreadline.lineeditor import lineobj
-from pyreadline.lineeditor.history import LineHistory
-import pyreadline.lineeditor.history as history
 
-import pyreadline.logger
 
 pyreadline.logger.sock_silent = False
-from pyreadline.logger import log
 
 # ----------------------------------------------------------------------
 

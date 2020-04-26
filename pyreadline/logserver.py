@@ -9,7 +9,8 @@ from __future__ import print_function, unicode_literals, absolute_import
 
 import logging
 import logging.handlers
-import struct, socket
+import struct
+import socket
 from pyreadline.unicode_helper import ensure_unicode
 
 try:

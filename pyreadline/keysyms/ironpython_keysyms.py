@@ -97,6 +97,8 @@ code2sym_map = {  # c32.CANCEL:    'Cancel',
 }
 
 # function to handle the mapping
+
+
 def make_keysym(keycode):
     try:
         sym = code2sym_map[keycode]

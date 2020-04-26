@@ -7,7 +7,8 @@
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
 
-import re, operator
+import re
+import operator
 
 
 def str_find_all(str, ch):

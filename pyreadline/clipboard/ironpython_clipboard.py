@@ -6,10 +6,10 @@
 #  the file COPYING, distributed as part of this software.
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
+import System.Windows.Forms.Clipboard as cb
 import clr
 
 clr.AddReferenceByPartialName("System.Windows.Forms")
-import System.Windows.Forms.Clipboard as cb
 
 
 def GetClipboardText():

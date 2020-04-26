@@ -15,7 +15,9 @@ This was modeled after the C extension of the same name by Fredrik Lundh.
 
 # primitive debug printing that won't interfere with the screen
 
-import sys, os
+from .event import Event
+import sys
+import os
 import traceback
 import re
 
@@ -67,6 +69,8 @@ GENERIC_READ = int(0x80000000)
 GENERIC_WRITE = 0x40000000
 
 # Windows structures we'll need later
+
+
 class COORD(Structure):
     _fields_ = [("X", c_short), ("Y", c_short)]
 
@@ -768,8 +772,6 @@ Console.WriteFile.argtypes = [
 ]  # HANDLE, LPCVOID , DWORD, LPDWORD , LPOVERLAPPED
 
 
-from .event import Event
-
 VkKeyScan = windll.user32.VkKeyScanA
 
 
@@ -787,7 +789,8 @@ class event(Event):
         self.char = ""
         self.keycode = 0
         self.keysym = "??"
-        self.keyinfo = None  # a tuple with (control, meta, shift, keycode) for dispatch
+        # a tuple with (control, meta, shift, keycode) for dispatch
+        self.keyinfo = None
         self.width = None
 
         if input.EventType == KEY_EVENT:
@@ -902,7 +905,8 @@ def install_readline(hook):
 
 
 if __name__ == "__main__":
-    import time, sys
+    import time
+    import sys
 
     def p(char):
         return chr(VkKeyScan(ord(char)) & 0xFF)

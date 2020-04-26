@@ -9,7 +9,10 @@
 from __future__ import print_function, unicode_literals, absolute_import
 
 """ an attempt to implement readline for Python in Python using ctypes"""
-import sys, os, re, time
+import sys
+import os
+import re
+import time
 from glob import glob
 
 from . import release
@@ -462,7 +465,7 @@ class Readline(BaseReadline):
 
     #  To export as readline interface
 
-    ##  Internal functions
+    # Internal functions
 
     def _bell(self):
         """ring the bell if requested."""

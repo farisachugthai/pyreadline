@@ -7,17 +7,18 @@
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
 
-import sys, unittest
+from pyreadline.py3k_compat import StringIO
+from pyreadline.test.common import *
+import pyreadline.logger as logger
+from pyreadline.logger import log
+from pyreadline.lineeditor import lineobj
+from pyreadline import keysyms
+from pyreadline.modes.vi import *
+import sys
+import unittest
 
 sys.path.insert(0, "../..")
-from pyreadline.modes.vi import *
-from pyreadline import keysyms
-from pyreadline.lineeditor import lineobj
-from pyreadline.logger import log
-import pyreadline.logger as logger
-from pyreadline.test.common import *
 
-from pyreadline.py3k_compat import StringIO
 
 # ----------------------------------------------------------------------
 

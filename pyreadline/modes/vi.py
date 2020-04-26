@@ -50,7 +50,7 @@ class ViMode(basemode.BaseMode):
             return True
         return False
 
-    ### Methods below here are bindable emacs functions
+    # Methods below here are bindable emacs functions
 
     def init_editing_mode(self, e):  # (M-C-j)
         """Initialize vi editingmode"""
@@ -331,6 +331,8 @@ _VI_SEARCH = "vi_search"
 _VI_END = "vi_end"
 
 # vi helper class
+
+
 class ViCommand:
     def __init__(self, readline):
         self.readline = readline

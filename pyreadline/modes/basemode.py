@@ -7,7 +7,12 @@
 #  the file COPYING, distributed as part of this software.
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
-import os, re, math, glob, sys, time
+import os
+import re
+import math
+import glob
+import sys
+import time
 from pyreadline.py3k_compat import callable
 import pyreadline.logger as logger
 from pyreadline.logger import log
@@ -314,7 +319,7 @@ class BaseMode(object):
         be bound to TAB, but is unbound by default."""
         self.finalize()
 
-    ### Methods below here are bindable emacs functions
+    # Methods below here are bindable emacs functions
 
     def insert_text(self, string):
         """Insert text into the command line."""
@@ -365,7 +370,7 @@ class BaseMode(object):
         self.l_buffer.backward_word_end(self.argument_reset)
         self.finalize()
 
-    ### Movement with extend selection
+    # Movement with extend selection
     def beginning_of_line_extend_selection(self, e):  #
         """Move to the start of the current line. """
         self.l_buffer.beginning_of_line_extend_selection()
@@ -410,7 +415,7 @@ class BaseMode(object):
         self.l_buffer.forward_word_end_extend_selection(self.argument_reset)
         self.finalize()
 
-    ######## Change case
+    # Change case
 
     def upcase_word(self, e):  # (M-u)
         """Uppercase the current (or following) word. With a negative
