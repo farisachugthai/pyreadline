@@ -1,8 +1,8 @@
-'''
+"""
 Example script using the callback interface of readline.
 
 :author: strank
-'''
+"""
 from __future__ import print_function, unicode_literals, absolute_import
 
 __docformat__ = "restructuredtext en"
@@ -23,7 +23,9 @@ maxlines = 10
 
 
 def main():
-    readline.callback_handler_install('Starting test, please do type:' + os.linesep, lineReceived)
+    readline.callback_handler_install(
+        "Starting test, please do type:" + os.linesep, lineReceived
+    )
     index = 0
     start = int(time.time())
     while prompting:
@@ -45,11 +47,11 @@ def lineReceived(line):
         prompting = False
         readline.callback_handler_remove()
     else:
-        readline.callback_handler_install('Got %s of %s, more typing please:' % (count, maxlines)
-                                          + os.linesep, lineReceived)
+        readline.callback_handler_install(
+            "Got %s of %s, more typing please:" % (count, maxlines) + os.linesep,
+            lineReceived,
+        )
 
 
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
