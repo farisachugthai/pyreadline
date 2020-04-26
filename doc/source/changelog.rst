@@ -1,3 +1,8 @@
+=========
+Changelog
+=========
+
+
 2011-04-10 Takayuki SHIMIZUKAWA <shimizukawa -at- gmail.com>
 	* Python3 ready.
 
@@ -350,3 +355,5 @@
 	* Changed all python files to conform to 4 space indent.
 	* Added changelog
 	* Added os.path.expanduser to expand out ~/.history paths
+
+.. Vim: set nospell:

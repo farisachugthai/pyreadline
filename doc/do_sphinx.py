@@ -1,26 +1,38 @@
 #!/usr/bin/env python
 """Script to build documentation using Sphinx.
 """
+from __future__ import print_function
 
 import fileinput
 import os
+import shlex
 import sys
 
+try:
+    from subprocess import run
+except ImportError:
+    run = None
+
+try:
+    from runpy import run_module
+except ImportError:
+    run_module = None
 
 def oscmd(c):
-    os.system(c)
+    if run is not None:
+        cmd = [sys.executable, '-m'].extend(shlex.split(shlex.quote(c)))
+        return run(cmd)
+    else:
+        os.system(c)
 
 
-if os.path.isdir("build"):
-    os.removedirs("build")
+def main():
+    # html manual.
+    oscmd("sphinx-build -d build/doctrees source build/html")
 
-os.makedirs("build/html")
-os.makedirs("build/latex")
+    if sys.platform == "win32":
+        return
 
-# html manual.
-oscmd("sphinx-build -d build/doctrees source build/html")
-
-if sys.platform != "win32":
     # LaTeX format.
     oscmd("sphinx-build -b latex -d build/doctrees source build/latex")
 
@@ -65,7 +77,7 @@ if sys.platform != "win32":
         elif "makechapterhead" in line:
             # Already have altered manual.cls: don't need to again.
             unmodified = False
-        print line,
+        print(line)
 
     # Copying the makefile produced by sphinx...
     oscmd("pdflatex pyreadline.tex")
@@ -82,3 +94,9 @@ if sys.platform != "win32":
 #    oscmd('mkdir manual')
 #    oscmd('cp -r build/html/*.html build/html/_static manual/')
 #    oscmd('cp build/latex/ipython.pdf manual/')
+
+if __name__ == '__main__':
+    if run_module is None:
+        main()
+    else:
+        run_module('sphinx', init_globals=globals())
