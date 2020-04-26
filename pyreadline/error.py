@@ -20,3 +20,7 @@ class NotAWordError(IndexError):
     pass
 
 
+class MockConsoleError(ReadlineError):
+    pass
+
+

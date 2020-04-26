@@ -9,9 +9,10 @@
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
 
-import sys
+import abc
 import os
 import re
+import sys
 import time
 from glob import glob
 
@@ -23,7 +24,7 @@ from pyreadline.keysyms.common import make_KeyPress_from_keydescr
 from pyreadline.unicode_helper import ensure_unicode, ensure_str
 from pyreadline.logger import log
 from pyreadline.modes import editingmodes
-from pyreadline.error import ReadlineError, GetSetError
+from pyreadline.error import ReadlineError, GetSetError, MockConsoleError
 from pyreadline import release
 from pyreadline.py3k_compat import callable, execfile
 
@@ -37,10 +38,6 @@ else:
     default_prompt = ""
 
 
-class MockConsoleError(Exception):
-    pass
-
-
 class MockConsole(object):
     """object used during refactoring. Should raise errors when someone tries to use it.
     """
@@ -52,15 +49,32 @@ class MockConsole(object):
         pass
 
 
-class BaseReadline(object):
-    def __init__(self):
-        self.allow_ctrl_c = False
-        self.ctrl_c_tap_time_interval = 0.3
+class BaseReadlineABC(abc.ABC):
+    """Standard readline library call, not available for all implementations."""
 
-        self.debug = False
-        self.bell_style = "none"
-        self.mark = -1
-        self.console = MockConsole()
+    @abc.abstractmethod
+    def readline(self, prompt=""):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def redisplay(self):
+        raise NotImplementedError
+
+    @abc.abstractproperty
+    def console(self):
+        return MockConsole()
+
+
+class BaseReadline(BaseReadlineABC):
+
+    def __init__(self, allow_ctrl_c=False, ctrl_c_tap_time_interval=0.3,
+            debug=False, bell_style="none", mark=-1):
+        self.allow_ctrl_c = allow_ctrl_c
+        self.ctrl_c_tap_time_interval = ctrl_c_tap_time_interval
+        self.debug = debug
+        self.bell_style = bell_style
+        self.mark = mark
+
         self.disable_readline = False
         # this code needs to follow l_buffer and history creation
         self.editingmodes = [mode(self) for mode in editingmodes]
@@ -70,17 +84,23 @@ class BaseReadline(object):
             mode.init_editing_mode(None)
         self.mode = self.editingmodes[0]
 
-        self.read_inputrc()
+        # dude this method is stupid large
+        # self.read_inputrc()
+
         log("\n".join(self.mode.rl_settings_to_string()))
 
         self.callback = None
 
+    @property
+    def console(self):
+        return console.Console()
+
     def parse_and_bind(self, string):
         """Parse and execute single line of a readline init file."""
+        log('parse_and_bind("%s")' % string)
+        if string.startswith("#"):
+            return
         try:
-            log('parse_and_bind("%s")' % string)
-            if string.startswith("#"):
-                return
             if string.startswith("set"):
                 m = re.compile(r"set\s+([-a-zA-Z0-9]+)\s+(.+)\s*$").match(string)
                 if m:
@@ -109,7 +129,7 @@ class BaseReadline(object):
                         )
                     return
                 self.mode._bind_key(key, func)
-        except:
+        except Exception:
             log("error")
             raise
 
@@ -247,16 +267,6 @@ class BaseReadline(object):
         pass
 
     #
-    # Standard call, not available for all implementations
-    #
-
-    def readline(self, prompt=""):
-        raise NotImplementedError
-
-    def redisplay(self):
-        raise NotImplementedError
-
-    #
     # Callback interface
     #
     def process_keyevent(self, keyinfo):
@@ -294,6 +304,9 @@ class BaseReadline(object):
         self,  # in 2.4 we cannot call expanduser with unicode string
         inputrcpath=os.path.expanduser(ensure_str("~/pyreadlineconfig.ini")),
     ):
+        """I'm either reading this wrong or this function has ~10 closures
+    inside of it."""
+
         modes = dict([(x.mode, x) for x in self.editingmodes])
         mode = self.editingmodes[0].mode
 
@@ -367,9 +380,18 @@ class BaseReadline(object):
         def enable_ipython_paste_for_paths(boolean):
             self.mode.enable_ipython_paste_for_paths = boolean
 
-        def debug_output(
-            on, filename="pyreadline_debug_log.txt"
-        ):  # Not implemented yet
+        def debug_output(on, filename="pyreadline_debug_log.txt"):
+            """Initialize the loggers used through the repository.
+
+            Parameters
+            ----------
+            on : str
+                One of 'on' or 'on_nologfile'. If is any other value, the
+                global logger instance will be stopped.
+            filename : str (pathlike)
+                Path of the logfile
+
+            """
             if on in ["on", "on_nologfile"]:
                 self.debug = True
 
@@ -439,33 +461,51 @@ class BaseReadline(object):
             try:
                 execfile(inputrcpath, loc, loc)
             except Exception as x:
-                raise
                 import traceback
 
                 print("Error reading .pyinputrc", file=sys.stderr)
                 filepath, lineno = traceback.extract_tb(sys.exc_traceback)[1][:2]
                 print("Line: %s in file %s" % (lineno, filepath), file=sys.stderr)
                 print(x, file=sys.stderr)
-                raise ReadlineError("Error reading .pyinputrc")
+                # raise ReadlineError("Error reading .pyinputrc")
+                raise
+
+    def redisplay(self):
+        self._update_line()
+
+    def readline(self, prompt=""):
+        """Callback that returns after every line is sent by the user.
+
+        Returns
+        -------
+        `get_line_buffer` with a newline after.
+
+        Notes
+        -----
+        Updates 'ctrl_c_timeout'.
+
+        """
+        self.readline_setup(prompt)
+        self.ctrl_c_timeout = time.time()
+        self._readline_from_keyboard()
+        self.console.write("\r\n")
+        line = self.get_line_buffer()
+        if line != "":
+            log("Returning. Line Buffer: (%s) " % line)
+
+        return line + "\n"
+
 
 
 class Readline(BaseReadline):
-    """Baseclass for readline based on a console
-    """
+    """Baseclass for readline based on a console."""
 
-    def __init__(self):
-        BaseReadline.__init__(self)
-        self.console = console.Console()
+    def __init__(self, command_color=None, prompt_color=None):
+        super(Readline, self).__init__()
         self.selection_color = self.console.saveattr << 4
-        self.command_color = None
-        self.prompt_color = None
+        self.command_color = command_color
+        self.prompt_color = prompt_color
         self.size = self.console.size()
-
-        # variables you can control with parse_and_bind
-
-    #  To export as readline interface
-
-    # Internal functions
 
     def _bell(self):
         """ring the bell if requested."""
@@ -601,14 +641,6 @@ class Readline(BaseReadline):
         self._print_prompt()
         self._update_line()
 
-    def readline(self, prompt=""):
-        self.readline_setup(prompt)
-        self.ctrl_c_timeout = time.time()
-        self._readline_from_keyboard()
-        self.console.write("\r\n")
-        log("returning(%s)" % self.get_line_buffer())
-        return self.get_line_buffer() + "\n"
-
     def handle_ctrl_c(self):
         from pyreadline.keysyms.common import KeyPress
         from pyreadline.console.event import Event
@@ -629,6 +661,3 @@ class Readline(BaseReadline):
         else:
             raise KeyboardInterrupt
         return event
-
-    def redisplay(self):
-        self._update_line()

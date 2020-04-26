@@ -7,13 +7,12 @@
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
 
-import socket
+import cmd  # test
 import logging
 import logging.handlers
-from pyreadline.unicode_helper import ensure_str
+import socket
 
-host = "localhost"
-port = logging.handlers.DEFAULT_TCP_LOGGING_PORT
+from pyreadline.unicode_helper import ensure_str
 
 
 def init_logger(log_level=logging.DEBUG, propagate=False, fmt_msg=None, date_fmt=None):
@@ -65,17 +64,18 @@ pyreadline_logger = init_logger(
     fmt_msg="[ %(name)s : %(relativeCreated)d :] %(levelname)s : %(module)s : --- %(message)s ",
 )
 
-
 # socket_handler = None
 # pyreadline_logger.addHandler(NullHandler())
 
 
 class SocketStream(object):
-    def __init__(self, host, port):
+    def __init__(self, host=None, port=None):
         self.logsocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.host = host if host is not None else "localhost"
+        self.port = port if port is not None else logging.handlers.DEFAULT_TCP_LOGGING_PORT
 
     def write(self, s):
-        self.logsocket.sendto(ensure_str(s), (host, port))
+        self.logsocket.sendto(ensure_str(s), (self.host, self.port))
 
     def flush(self):
         pass
@@ -84,11 +84,12 @@ class SocketStream(object):
         pass
 
 
-def start_socket_log(formatter=None):
+def start_socket_log(formatter=None, log_level=30):
+    socket_handler = logging.StreamHandler(SocketStream("localhost",  logging.handlers.DEFAULT_TCP_LOGGING_PORT))
     if formatter is None:
-        return
-    socket_handler = logging.StreamHandler(SocketStream(host, port))
+        formatter = logging.Formatter()
     socket_handler.setFormatter(formatter)
+    socket_handler.setLevel(log_level)
     pyreadline_logger.addHandler(socket_handler)
 
 
@@ -98,8 +99,9 @@ def stop_socket_log(socket_handler):
         socket_handler = None
 
 
-def start_file_log(filename):
+def start_file_log(filename, log_level=30):
     file_handler = logging.FileHandler(filename, "w")
+    file_handler.setLevel(log_level)
     pyreadline_logger.addHandler(file_handler)
 
 

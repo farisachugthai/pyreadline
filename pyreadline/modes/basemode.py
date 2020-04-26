@@ -142,7 +142,7 @@ class BaseMode(object):
     ####################################
 
     def finalize(self):
-        """Every bindable command should call this function for cleanup. 
+        """Every bindable command should call this function for cleanup.
         Except those that want to set argument to a non-zero value.
         """
         self.argument = 0
@@ -524,10 +524,15 @@ class BaseMode(object):
         self.finalize()
 
     def ipython_paste(self, e):
-        """Paste windows clipboard. If enable_ipython_paste_list_of_lists is 
-        True then try to convert tabseparated data to repr of list of lists or 
-        repr of array.
-        If enable_ipython_paste_for_paths==True then change \\ to / and spaces to \space"""
+        """Paste windows clipboard.
+
+        If `enable_ipython_paste_list_of_lists` is
+        `True` then try to convert tab-separated data to `repr` of `list` of
+        `lists` or `repr` of `array`.
+
+        If `enable_ipython_paste_for_paths` is True then change
+        :kbd:`\\` to :kbd:`/` and :kbd:`Space` to an escaped Space.
+        """
         if self.enable_win32_clipboard:
             txt = clipboard.get_clipboard_text_and_convert(
                 self.enable_ipython_paste_list_of_lists
@@ -554,10 +559,19 @@ class BaseMode(object):
         self.finalize()
 
     def dump_functions(self, e):  # ()
-        """Print all of the functions and their key bindings to the Readline
-        output stream. If a numeric argument is supplied, the output is
-        formatted in such a way that it can be made part of an inputrc
-        file. This command is unbound by default."""
+        """Dump all functions to the output stream.
+
+        Print all of the functions and their key bindings to the Readline
+        output stream.
+
+        Parameters
+        ----------
+        e : int
+            If a numeric argument is supplied, the output is formatted in such
+            a way that it can be made part of an inputrc file.
+
+        This command is unbound by default.
+        """
         print()
         txt = "\n".join(self.rl_settings_to_string())
         print(txt)
