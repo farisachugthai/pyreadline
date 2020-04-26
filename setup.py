@@ -26,6 +26,7 @@ import glob
 import logging
 import os
 import sys
+from platform import system
 
 logging.basicConfig()
 
@@ -37,29 +38,13 @@ except ImportError:
 else:
     from setuptools import find_packages
 
-from platform import system
-
-# This doesn't do anything because linux can pip install it
-# _S = system()
-# if "windows" != _S.lower():
-#     raise RuntimeError("pyreadline is for Windows only, not {}.".format(_S))
-
-# BEFORE importing distutils, remove MANIFEST. distutils doesn't properly
-# update it when the contents of directories change.
-if os.path.exists("MANIFEST"):
-    os.remove("MANIFEST")
-
-
-with open("pyreadline/release.py") as f:
-    exec(compile(f.read(), "pyreadline/release.py", "exec"))
-
 try:
     import sphinx
-    from sphinx.setup_command import BuildDoc
-
-    cmd_class = {"build_sphinx": BuildDoc}
 except ImportError:
     cmd_class = {}
+else:
+    from sphinx.setup_command import BuildDoc
+    cmd_class = {"build_sphinx": BuildDoc}
 
 if find_packages is not None:
     packages = find_packages()
@@ -189,4 +174,8 @@ setup(
     data_files=[("doc", glob.glob("doc/*")),],
     cmdclass=cmd_class,
     python_requires=">=2.6.0",
+    requires=["setuptools", "pywin32"],
+    # They actually really don't but hey
+    tests_require=["pytest"],
+    extras_require={"docs": ["sphinx"]},
 )
