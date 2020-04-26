@@ -8,3 +8,5 @@ MANIFEST
 *.pyc
 *.pyo
 **tags**
+docs/build
+.venv

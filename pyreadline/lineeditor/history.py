@@ -61,8 +61,7 @@ class LineHistory(object):
         return item.get_line_text()
 
     def set_history_length(self, value):
-        log("set_history_length: old:%d new:%d" %
-            (self._history_length, value))
+        log("set_history_length: old:%d new:%d" % (self._history_length, value))
         self._history_length = value
 
     def get_history_cursor(self):
@@ -71,8 +70,7 @@ class LineHistory(object):
         return value
 
     def set_history_cursor(self, value):
-        log("set_history_cursor: old:%d new:%d" %
-            (self._history_cursor, value))
+        log("set_history_cursor: old:%d new:%d" % (self._history_cursor, value))
         self._history_cursor = value
 
     history_length = property(get_history_length, set_history_length)
@@ -102,7 +100,7 @@ class LineHistory(object):
         if filename is None:
             filename = self.history_filename
         with io.open(filename, "wb") as fp:
-            for line in self.history[-self.history_length:]:
+            for line in self.history[-self.history_length :]:
                 fp.write(ensure_str(line.get_line_text()))
                 fp.write("\n".encode("ascii"))
 
@@ -188,8 +186,7 @@ class LineHistory(object):
     def forward_search_history(self, searchfor, startpos=None):
         if startpos is None:
             startpos = min(
-                self.history_cursor, max(
-                    0, self.get_current_history_length() - 1)
+                self.history_cursor, max(0, self.get_current_history_length() - 1)
             )
         origpos = startpos
 
@@ -226,7 +223,7 @@ class LineHistory(object):
                 self.lastcommand != self.history_search_forward
                 and self.lastcommand != self.history_search_backward
             ):
-                self.query = "".join(partial[0: partial.point].get_line_text())
+                self.query = "".join(partial[0 : partial.point].get_line_text())
             hcstart = max(self.history_cursor, 0)
             hc = self.history_cursor + direction
             while (direction < 0 and hc >= 0) or (
@@ -235,8 +232,7 @@ class LineHistory(object):
                 h = self.history[hc]
                 if not self.query:
                     self.history_cursor = hc
-                    result = lineobj.ReadLineTextBuffer(
-                        h, point=len(h.get_line_text()))
+                    result = lineobj.ReadLineTextBuffer(h, point=len(h.get_line_text()))
                     return result
                 elif h.get_line_text().startswith(self.query) and (
                     h != partial.get_line_text()
@@ -258,8 +254,7 @@ class LineHistory(object):
                     and self.query
                 ):
                     return lineobj.ReadLineTextBuffer(
-                        self.history[max(
-                            min(hcstart, len(self.history) - 1), 0)],
+                        self.history[max(min(hcstart, len(self.history) - 1), 0)],
                         point=partial.point,
                     )
                 else:

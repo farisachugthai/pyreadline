@@ -6,22 +6,18 @@
 #  the file COPYING, distributed as part of this software.
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
+
+import abc
+import copy
 import re
 import operator
 import sys
 
-from . import wordmatcher
-import pyreadline.clipboard as clipboard
+from pyreadline import clipboard
 from pyreadline.logger import log
 from pyreadline.unicode_helper import ensure_unicode, biter
-
-kill_ring_to_clipboard = (
-    False  # set to true to copy every addition to kill ring to clipboard
-)
-
-
-class NotAWordError(IndexError):
-    pass
+from pyreadline.lineeditor import wordmatcher
+from pyreadline.error import NotAWordError
 
 
 def quote_char(c):
@@ -32,7 +28,8 @@ def quote_char(c):
 ############## Line positioner ########################
 
 
-class LinePositioner(object):
+class LinePositioner(abc.ABC):
+    @abc.abstractmethod
     def __call__(self, line):
         NotImplementedError("Base class !!!")
 
@@ -85,9 +82,9 @@ PrevWordStart = PrevWordStart()
 
 class WordStart(LinePositioner):
     def __call__(self, line):
-        if line.is_word_token(line.get_line_text()[Point(line): Point(line) + 1]):
+        if line.is_word_token(line.get_line_text()[Point(line) : Point(line) + 1]):
             if Point(line) > 0 and line.is_word_token(
-                line.get_line_text()[Point(line) - 1: Point(line)]
+                line.get_line_text()[Point(line) - 1 : Point(line)]
             ):
                 return PrevWordStart(line)
             else:
@@ -101,9 +98,9 @@ WordStart = WordStart()
 
 class WordEnd(LinePositioner):
     def __call__(self, line):
-        if line.is_word_token(line.get_line_text()[Point(line): Point(line) + 1]):
+        if line.is_word_token(line.get_line_text()[Point(line) : Point(line) + 1]):
             if line.is_word_token(
-                line.get_line_text()[Point(line) + 1: Point(line) + 2]
+                line.get_line_text()[Point(line) + 1 : Point(line) + 2]
             ):
                 return NextWordEnd(line)
             else:
@@ -126,10 +123,10 @@ PrevWordEnd = PrevWordEnd()
 class PrevSpace(LinePositioner):
     def __call__(self, line):
         point = line.point
-        if line[point - 1: point].get_line_text() == " ":
-            while point > 0 and line[point - 1: point].get_line_text() == " ":
+        if line[point - 1 : point].get_line_text() == " ":
+            while point > 0 and line[point - 1 : point].get_line_text() == " ":
                 point -= 1
-        while point > 0 and line[point - 1: point].get_line_text() != " ":
+        while point > 0 and line[point - 1 : point].get_line_text() != " ":
             point -= 1
         return point
 
@@ -227,12 +224,20 @@ PointSlice = PointSlice()
 
 
 class TextLine(object):
-    def __init__(self, txtstr, point=None, mark=None):
+    """A line of text.
+
+    .. versionchanged:: now subclasses str.
+
+    """
+
+    def __init__(self, txtstr, point=None, mark=None, **kwargs):
         self.line_buffer = []
         self._point = 0
         self.mark = -1
         self.undo_stack = []
         self.overwrite = False
+        # Wait this is so weird. Why do we check for this upon initialization?
+        # wouldn't it make more sense to just define how we copy this?
         if isinstance(txtstr, TextLine):  # copy
             self.line_buffer = txtstr.line_buffer[:]
             if point is None:
@@ -311,8 +316,7 @@ class TextLine(object):
     def visible_line_width(self, position=Point):
         """Return the visible width of the text in line buffer up to position."""
         extra_char_width = len(
-            [None for c in self[:position].line_buffer if 0x2013 <=
-                ord(c) <= 0xFFFD]
+            [None for c in self[:position].line_buffer if 0x2013 <= ord(c) <= 0xFFFD]
         )
         return (
             len(self[:position].quoted_text())
@@ -474,12 +478,34 @@ l.point = 5
 
 
 class ReadLineTextBuffer(TextLine):
-    def __init__(self, txtstr, point=None, mark=None):
+    """The user's current line buffer.
+
+    Parameters
+    ----------
+    kill_ring_to_clipboard : bool
+        set to true to copy every addition to kill ring to clipboard
+
+    """
+
+    def __init__(
+        self,
+        txtstr,
+        point=None,
+        mark=None,
+        enable_win32_clipboard=True,
+        selection_mark=-1,
+        enable_selection=True,
+        kill_ring=None,
+        kill_ring_to_clipboard=False,
+    ):
         super(ReadLineTextBuffer, self).__init__(txtstr, point, mark)
-        self.enable_win32_clipboard = True
-        self.selection_mark = -1
-        self.enable_selection = True
-        self.kill_ring = []
+        self.enable_win32_clipboard = enable_win32_clipboard
+        self.selection_mark = selection_mark
+        self.enable_selection = enable_selection
+        if kill_ring is None:
+            self.kill_ring = []
+
+        self.kill_ring_to_clipboard = kill_ring_to_clipboard
 
     def __repr__(self):
         return "ReadLineTextBuffer" '("%s",point=%s,mark=%s,selection_mark=%s)' % (
@@ -495,6 +521,13 @@ class ReadLineTextBuffer(TextLine):
         self._insert_text(char, argument)
 
     def to_clipboard(self):
+        """Send `get_line_text` to the clipboard.
+
+        Notes
+        -----
+        :attr:`enable_win32_clipboard` must be `True`.
+
+        """
         if self.enable_win32_clipboard:
             clipboard.set_clipboard_text(self.get_line_text())
 
@@ -614,10 +647,10 @@ class ReadLineTextBuffer(TextLine):
     def delete_selection(self):
         if self.enable_selection and self.selection_mark >= 0:
             if self.selection_mark < self.point:
-                del self[self.selection_mark: self.point]
+                del self[self.selection_mark : self.point]
                 self.selection_mark = -1
             else:
-                del self[self.point: self.selection_mark]
+                del self[self.point : self.selection_mark]
                 self.selection_mark = -1
             return True
         else:
@@ -725,8 +758,8 @@ class ReadLineTextBuffer(TextLine):
     # Kill
 
     def kill_line(self):
-        self.add_to_kill_ring(self[self.point:])
-        del self.line_buffer[self.point:]
+        self.add_to_kill_ring(self[self.point :])
+        del self.line_buffer[self.point :]
 
     def kill_whole_line(self):
         self.add_to_kill_ring(self[:])
@@ -823,7 +856,7 @@ class ReadLineTextBuffer(TextLine):
     # Kill ring
     def add_to_kill_ring(self, txt):
         self.kill_ring = [txt]
-        if kill_ring_to_clipboard:
+        if self.kill_ring_to_clipboard:
             clipboard.SetClipboardText(txt.get_line_text())
 
     def paste_from_kill_ring(self):
