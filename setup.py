@@ -11,7 +11,14 @@
 import os
 import sys
 import glob
-from distutils.core import setup
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
+    find_packages = None
+else:
+    from setuptools import find_packages
+
 from platform import system
 
 # This doesn't do anything because linux can pip install it
@@ -35,16 +42,23 @@ try:
 except ImportError:
     cmd_class = {}
 
-packages = [
-    "pyreadline",
-    "pyreadline.clipboard",
-    "pyreadline.configuration",
-    "pyreadline.console",
-    "pyreadline.keysyms",
-    "pyreadline.lineeditor",
-    "pyreadline.modes",
-    "pyreadline.test",
-]
+if find_packages is not None:
+    packages = find_packages()
+else:
+    packages = [
+        "pyreadline",
+        "pyreadline.clipboard",
+        "pyreadline.configuration",
+        "pyreadline.console",
+        "pyreadline.keysyms",
+        "pyreadline.lineeditor",
+        "pyreadline.modes",
+        "pyreadline.test",
+    ]
+
+# TODO: put this in an intermediate variable. append as needed
+# for distutils setuptools compatabilit.
+# TODO: add zip_safe=False
 
 setup(
     name=name,
@@ -58,12 +72,14 @@ setup(
     license=license,
     classifiers=classifiers,
     url=url,
+    # check that this exists in setuptools
     download_url=download_url,
     platforms=platforms,
     keywords=keywords,
-    py_modules=["readline"],
+    # pretty sure you shouldn't do both modules and package
+    # py_modules=["readline"],
     packages=packages,
     package_data={"pyreadline": ["configuration/*"]},
-    data_files=[],
+    data_files=[("doc", glob.glob("doc/*")),],
     cmdclass=cmd_class,
 )
