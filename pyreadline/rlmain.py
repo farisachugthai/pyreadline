@@ -15,20 +15,18 @@ import re
 import time
 from glob import glob
 
-from . import release
-from .py3k_compat import callable, execfile
-
-import pyreadline.lineeditor.lineobj as lineobj
-import pyreadline.lineeditor.history as history
-import pyreadline.clipboard as clipboard
-import pyreadline.console as console
-import pyreadline.logger as logger
+from pyreadline.lineeditor import lineobj
+from pyreadline.lineeditor import history
+from pyreadline import clipboard, console, logger
 
 from pyreadline.keysyms.common import make_KeyPress_from_keydescr
 from pyreadline.unicode_helper import ensure_unicode, ensure_str
-from .logger import log
-from .modes import editingmodes
-from .error import ReadlineError, GetSetError
+from pyreadline.logger import log
+from pyreadline.modes import editingmodes
+from pyreadline.error import ReadlineError, GetSetError
+from pyreadline import release
+from pyreadline.py3k_compat import callable, execfile
+
 
 in_ironpython = "IronPython" in sys.version
 if in_ironpython:  # ironpython does not provide a prompt string to readline
@@ -48,15 +46,13 @@ class MockConsole(object):
     """
 
     def __setattr__(self, x):
-        raise MockConsoleError(
-            "Should not try to get attributes from MockConsole")
+        raise MockConsoleError("Should not try to get attributes from MockConsole")
 
     def cursor(self, size=50):
         pass
 
 
 class BaseReadline(object):
-
     def __init__(self):
         self.allow_ctrl_c = False
         self.ctrl_c_tap_time_interval = 0.3
@@ -86,8 +82,7 @@ class BaseReadline(object):
             if string.startswith("#"):
                 return
             if string.startswith("set"):
-                m = re.compile(
-                    r"set\s+([-a-zA-Z0-9]+)\s+(.+)\s*$").match(string)
+                m = re.compile(r"set\s+([-a-zA-Z0-9]+)\s+(.+)\s*$").match(string)
                 if m:
                     var_name = m.group(1)
                     val = m.group(2)
@@ -313,8 +308,7 @@ class BaseReadline(object):
             elif hasattr(modes[mode], name):
                 modes[mode]._bind_key(key, getattr(modes[mode], name))
             else:
-                print("Trying to bind unknown command '%s' to key '%s'" %
-                      (name, key))
+                print("Trying to bind unknown command '%s' to key '%s'" % (name, key))
 
         def un_bind_key(key):
             keyinfo = make_KeyPress_from_keydescr(key).tuple()
@@ -449,10 +443,8 @@ class BaseReadline(object):
                 import traceback
 
                 print("Error reading .pyinputrc", file=sys.stderr)
-                filepath, lineno = traceback.extract_tb(
-                    sys.exc_traceback)[1][:2]
-                print("Line: %s in file %s" %
-                      (lineno, filepath), file=sys.stderr)
+                filepath, lineno = traceback.extract_tb(sys.exc_traceback)[1][:2]
+                print("Line: %s in file %s" % (lineno, filepath), file=sys.stderr)
                 print(x, file=sys.stderr)
                 raise ReadlineError("Error reading .pyinputrc")
 
@@ -480,8 +472,7 @@ class Readline(BaseReadline):
         if self.bell_style == "none":
             pass
         elif self.bell_style == "visible":
-            raise NotImplementedError(
-                "Bellstyle visible is not implemented yet.")
+            raise NotImplementedError("Bellstyle visible is not implemented yet.")
         elif self.bell_style == "audible":
             self.console.bell()
         else:
@@ -641,4 +632,3 @@ class Readline(BaseReadline):
 
     def redisplay(self):
         self._update_line()
-

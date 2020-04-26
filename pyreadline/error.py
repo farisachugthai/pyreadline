@@ -14,3 +14,9 @@ class ReadlineError(Exception):
 
 class GetSetError(ReadlineError):
     pass
+
+
+class NotAWordError(IndexError):
+    pass
+
+

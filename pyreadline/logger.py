@@ -16,8 +16,7 @@ host = "localhost"
 port = logging.handlers.DEFAULT_TCP_LOGGING_PORT
 
 
-def init_logger(log_level=logging.DEBUG, propagate=False, fmt_msg=None,
-        date_fmt=None):
+def init_logger(log_level=logging.DEBUG, propagate=False, fmt_msg=None, date_fmt=None):
     """Returns the pyreadline_logger used throughout the rest of the repo.
 
     Parameters
@@ -45,7 +44,6 @@ def init_logger(log_level=logging.DEBUG, propagate=False, fmt_msg=None,
     return logger
 
 
-
 # Globals:
 
 
@@ -55,13 +53,16 @@ if "NullHandler" not in dir(logging):
     class NullHandler(logging.Handler):
         def emit(self, s):
             pass
+
+
 else:
     from logging import NullHandler
 
 global pyreadline_logger
 
-pyreadline_logger = init_logger(log_level=logging.WARNING, fmt_msg=
-"[ %(name)s : %(relativeCreated)d :] %(levelname)s : %(module)s : --- %(message)s "
+pyreadline_logger = init_logger(
+    log_level=logging.WARNING,
+    fmt_msg="[ %(name)s : %(relativeCreated)d :] %(levelname)s : %(module)s : --- %(message)s ",
 )
 
 
@@ -81,7 +82,6 @@ class SocketStream(object):
 
     def close(self):
         pass
-
 
 
 def start_socket_log(formatter=None):
