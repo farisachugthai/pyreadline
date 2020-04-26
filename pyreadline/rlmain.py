@@ -503,6 +503,7 @@ class Readline(BaseReadline):
     def __init__(self, command_color=None, prompt_color=None):
         super(Readline, self).__init__()
         self.selection_color = self.console.saveattr << 4
+        self.read_inputrc()
         self.command_color = command_color
         self.prompt_color = prompt_color
         self.size = self.console.size()

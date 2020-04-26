@@ -11,6 +11,7 @@
 import os
 import sys
 import glob
+
 try:
     from setuptools import setup
 except ImportError:
@@ -30,9 +31,10 @@ from platform import system
 # update it when the contents of directories change.
 if os.path.exists("MANIFEST"):
     os.remove("MANIFEST")
-#
 
-exec(compile(open("pyreadline/release.py").read(), "pyreadline/release.py", "exec"))
+
+with open("pyreadline/release.py") as f:
+    exec(compile(f.read(), "pyreadline/release.py", "exec"))
 
 try:
     import sphinx
@@ -70,7 +72,24 @@ setup(
     maintainer=authors["Jorgen"][0],
     maintainer_email=authors["Jorgen"][1],
     license=license,
-    classifiers=classifiers,
+
+    # where did we define classifiers?
+    classifiers=[
+            # Trove classifiers
+            # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
+            "Environment :: Console",
+            "Intended Audience :: Developers",
+            "Natural Language :: English",
+            "Operating System :: Microsoft :: Windows :: Windows 10",
+            "Programming Language :: Python",
+            "Programming Language :: Python :: 2",
+            "Programming Language :: Python :: 2.7",
+            "Programming Language :: Python :: 3",
+            "Programming Language :: Python :: 3.6",
+            "Programming Language :: Python :: 3.7",
+            "Programming Language :: Python :: 3.8",
+            "Programming Language :: Python :: Implementation :: CPython",
+    ],
     url=url,
     # check that this exists in setuptools
     download_url=download_url,
