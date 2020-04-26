@@ -16,16 +16,57 @@ host = "localhost"
 port = logging.handlers.DEFAULT_TCP_LOGGING_PORT
 
 
-pyreadline_logger = logging.getLogger("PYREADLINE")
-pyreadline_logger.setLevel(logging.DEBUG)
-pyreadline_logger.propagate = False
-formatter = logging.Formatter(str("%(message)s"))
-file_handler = None
+def init_logger(log_level=logging.DEBUG, propagate=False, fmt_msg=None,
+        date_fmt=None):
+    """Returns the pyreadline_logger used throughout the rest of the repo.
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    `logging.Logger`.
+
+    """
+    logger = logging.getLogger("PYREADLINE")
+    logger.setLevel(log_level)
+    logger.propagate = propagate
+    if fmt_msg is None:
+        fmt_msg = "%(message)s"
+    if date_fmt is None:
+        datefmt = "%Y-%m-%d %H:%M:%S"
+    formatter = logging.Formatter(fmt_msg, datefmt)
+    handler = logging.StreamHandler()
+    handler.setLevel(level=log_level)
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    logger.addFilter(logging.Filter())
+
+    return logger
 
 
-class NULLHandler(logging.Handler):
-    def emit(self, s):
-        pass
+
+# Globals:
+
+
+# TODO the actual version check
+if "NullHandler" not in dir(logging):
+
+    class NullHandler(logging.Handler):
+        def emit(self, s):
+            pass
+else:
+    from logging import NullHandler
+
+global pyreadline_logger
+
+pyreadline_logger = init_logger(log_level=logging.WARNING, fmt_msg=
+"[ %(name)s : %(relativeCreated)d :] %(levelname)s : %(module)s : --- %(message)s "
+)
+
+
+# socket_handler = None
+# pyreadline_logger.addHandler(NullHandler())
 
 
 class SocketStream(object):
@@ -42,32 +83,27 @@ class SocketStream(object):
         pass
 
 
-socket_handler = None
-pyreadline_logger.addHandler(NULLHandler())
 
-
-def start_socket_log():
-    global socket_handler
+def start_socket_log(formatter=None):
+    if formatter is None:
+        return
     socket_handler = logging.StreamHandler(SocketStream(host, port))
     socket_handler.setFormatter(formatter)
     pyreadline_logger.addHandler(socket_handler)
 
 
-def stop_socket_log():
-    global socket_handler
+def stop_socket_log(socket_handler):
     if socket_handler:
         pyreadline_logger.removeHandler(socket_handler)
         socket_handler = None
 
 
 def start_file_log(filename):
-    global file_handler
     file_handler = logging.FileHandler(filename, "w")
     pyreadline_logger.addHandler(file_handler)
 
 
-def stop_file_log():
-    global file_handler
+def stop_file_log(file_handler):
     if file_handler:
         pyreadline_logger.removeHandler(file_handler)
         file_handler.close()
@@ -80,6 +116,6 @@ def stop_logging():
     stop_socket_log()
 
 
-def log(s):
-    s = ensure_str(s)
-    pyreadline_logger.debug(s)
+def log(s, log_level=30, exc_info=0):
+    """Log a string. Allow for variable log levels."""
+    pyreadline_logger.log(level=int(log_level), msg=str(s), exc_info=exc_info)

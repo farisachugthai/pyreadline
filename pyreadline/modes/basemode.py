@@ -7,6 +7,7 @@
 #  the file COPYING, distributed as part of this software.
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
+import logging
 import os
 import re
 import math
@@ -174,7 +175,7 @@ class BaseMode(object):
                 % (key, func, type(func), type(self._bind_key))
             )
         keyinfo = make_KeyPress_from_keydescr(key.lower()).tuple()
-        log(">>>%s -> %s<<<" % (keyinfo, func.__name__))
+        log(">>>%s -> %s<<<" % (keyinfo, func.__name__), logging.DEBUG)
         self.key_dispatch[keyinfo] = func
 
     def _bind_exit_key(self, key):

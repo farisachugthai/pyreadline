@@ -85,9 +85,9 @@ PrevWordStart = PrevWordStart()
 
 class WordStart(LinePositioner):
     def __call__(self, line):
-        if line.is_word_token(line.get_line_text()[Point(line) : Point(line) + 1]):
+        if line.is_word_token(line.get_line_text()[Point(line): Point(line) + 1]):
             if Point(line) > 0 and line.is_word_token(
-                line.get_line_text()[Point(line) - 1 : Point(line)]
+                line.get_line_text()[Point(line) - 1: Point(line)]
             ):
                 return PrevWordStart(line)
             else:
@@ -101,9 +101,9 @@ WordStart = WordStart()
 
 class WordEnd(LinePositioner):
     def __call__(self, line):
-        if line.is_word_token(line.get_line_text()[Point(line) : Point(line) + 1]):
+        if line.is_word_token(line.get_line_text()[Point(line): Point(line) + 1]):
             if line.is_word_token(
-                line.get_line_text()[Point(line) + 1 : Point(line) + 2]
+                line.get_line_text()[Point(line) + 1: Point(line) + 2]
             ):
                 return NextWordEnd(line)
             else:
@@ -126,10 +126,10 @@ PrevWordEnd = PrevWordEnd()
 class PrevSpace(LinePositioner):
     def __call__(self, line):
         point = line.point
-        if line[point - 1 : point].get_line_text() == " ":
-            while point > 0 and line[point - 1 : point].get_line_text() == " ":
+        if line[point - 1: point].get_line_text() == " ":
+            while point > 0 and line[point - 1: point].get_line_text() == " ":
                 point -= 1
-        while point > 0 and line[point - 1 : point].get_line_text() != " ":
+        while point > 0 and line[point - 1: point].get_line_text() != " ":
             point -= 1
         return point
 
@@ -311,7 +311,8 @@ class TextLine(object):
     def visible_line_width(self, position=Point):
         """Return the visible width of the text in line buffer up to position."""
         extra_char_width = len(
-            [None for c in self[:position].line_buffer if 0x2013 <= ord(c) <= 0xFFFD]
+            [None for c in self[:position].line_buffer if 0x2013 <=
+                ord(c) <= 0xFFFD]
         )
         return (
             len(self[:position].quoted_text())
@@ -613,10 +614,10 @@ class ReadLineTextBuffer(TextLine):
     def delete_selection(self):
         if self.enable_selection and self.selection_mark >= 0:
             if self.selection_mark < self.point:
-                del self[self.selection_mark : self.point]
+                del self[self.selection_mark: self.point]
                 self.selection_mark = -1
             else:
-                del self[self.point : self.selection_mark]
+                del self[self.point: self.selection_mark]
                 self.selection_mark = -1
             return True
         else:
@@ -724,8 +725,8 @@ class ReadLineTextBuffer(TextLine):
     # Kill
 
     def kill_line(self):
-        self.add_to_kill_ring(self[self.point :])
-        del self.line_buffer[self.point :]
+        self.add_to_kill_ring(self[self.point:])
+        del self.line_buffer[self.point:]
 
     def kill_whole_line(self):
         self.add_to_kill_ring(self[:])

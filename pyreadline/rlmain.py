@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""An attempt to implement readline for Python in Python using ctypes."""
 # *****************************************************************************
 #       Copyright (C) 2003-2006 Gary Bishop.
 #       Copyright (C) 2006  Jorgen Stenarson. <jorgen.stenarson@bostream.nu>
@@ -8,7 +9,6 @@
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
 
-""" an attempt to implement readline for Python in Python using ctypes"""
 import sys
 import os
 import re
@@ -48,13 +48,15 @@ class MockConsole(object):
     """
 
     def __setattr__(self, x):
-        raise MockConsoleError("Should not try to get attributes from MockConsole")
+        raise MockConsoleError(
+            "Should not try to get attributes from MockConsole")
 
     def cursor(self, size=50):
         pass
 
 
 class BaseReadline(object):
+
     def __init__(self):
         self.allow_ctrl_c = False
         self.ctrl_c_tap_time_interval = 0.3
@@ -66,7 +68,9 @@ class BaseReadline(object):
         self.disable_readline = False
         # this code needs to follow l_buffer and history creation
         self.editingmodes = [mode(self) for mode in editingmodes]
+        # We initialize every editing mode? Even if we don't use it?
         for mode in self.editingmodes:
+            log(mode, 0)
             mode.init_editing_mode(None)
         self.mode = self.editingmodes[0]
 
@@ -82,7 +86,8 @@ class BaseReadline(object):
             if string.startswith("#"):
                 return
             if string.startswith("set"):
-                m = re.compile(r"set\s+([-a-zA-Z0-9]+)\s+(.+)\s*$").match(string)
+                m = re.compile(
+                    r"set\s+([-a-zA-Z0-9]+)\s+(.+)\s*$").match(string)
                 if m:
                     var_name = m.group(1)
                     val = m.group(2)
@@ -308,7 +313,8 @@ class BaseReadline(object):
             elif hasattr(modes[mode], name):
                 modes[mode]._bind_key(key, getattr(modes[mode], name))
             else:
-                print("Trying to bind unknown command '%s' to key '%s'" % (name, key))
+                print("Trying to bind unknown command '%s' to key '%s'" %
+                      (name, key))
 
         def un_bind_key(key):
             keyinfo = make_KeyPress_from_keydescr(key).tuple()
@@ -443,8 +449,10 @@ class BaseReadline(object):
                 import traceback
 
                 print("Error reading .pyinputrc", file=sys.stderr)
-                filepath, lineno = traceback.extract_tb(sys.exc_traceback)[1][:2]
-                print("Line: %s in file %s" % (lineno, filepath), file=sys.stderr)
+                filepath, lineno = traceback.extract_tb(
+                    sys.exc_traceback)[1][:2]
+                print("Line: %s in file %s" %
+                      (lineno, filepath), file=sys.stderr)
                 print(x, file=sys.stderr)
                 raise ReadlineError("Error reading .pyinputrc")
 
@@ -472,7 +480,8 @@ class Readline(BaseReadline):
         if self.bell_style == "none":
             pass
         elif self.bell_style == "visible":
-            raise NotImplementedError("Bellstyle visible is not implemented yet.")
+            raise NotImplementedError(
+                "Bellstyle visible is not implemented yet.")
         elif self.bell_style == "audible":
             self.console.bell()
         else:
@@ -580,20 +589,21 @@ class Readline(BaseReadline):
 
         c = self.console
 
-        def nop(e):
-            pass
-
         try:
             event = c.getkeypress()
         except KeyboardInterrupt:
             event = self.handle_ctrl_c()
+
         try:
             result = self.mode.process_keyevent(event.keyinfo)
         except EOFError:
-            logger.stop_logging()
+            # logger.stop_logging()
             raise
         self._update_line()
         return result
+
+    def nop(e):
+        pass
 
     def readline_setup(self, prompt=""):
         BaseReadline.readline_setup(self, prompt)
@@ -631,3 +641,4 @@ class Readline(BaseReadline):
 
     def redisplay(self):
         self._update_line()
+
