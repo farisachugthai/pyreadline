@@ -13,45 +13,67 @@ import re
 import math
 import glob
 import sys
-import time
-from pyreadline.py3k_compat import callable
-import pyreadline.logger as logger
+import traceback
+
+from pyreadline import clipboard
+# from pyreadline import logger
+from pyreadline.error import ReadlineError
+from pyreadline.lineeditor import history
+from pyreadline.lineeditor import lineobj
 from pyreadline.logger import log
 from pyreadline.keysyms.common import make_KeyPress_from_keydescr
-import pyreadline.lineeditor.lineobj as lineobj
-import pyreadline.lineeditor.history as history
-import pyreadline.clipboard as clipboard
-from pyreadline.error import ReadlineError, GetSetError
+from pyreadline.py3k_compat import callable
 from pyreadline.unicode_helper import ensure_str, ensure_unicode
 
 in_ironpython = "IronPython" in sys.version
 
 
 class BaseMode(object):
+    """The base class that Emacs, Vi and NotEmacs inherit from.
+
+    Attributes
+    ----------
+    mode : str
+        Should be defined by all classes
+
+    """
     mode = "base"
 
-    def __init__(self, rlobj):
-        self.argument = 0
+    def __init__(self,
+            rlobj, argument=1, prevargument=None,
+            show_all_if_ambiguous="on",
+            mark_directories="on",
+            complete_filesystem="off",
+            completer=None,
+            begidx=0,
+            endidx=0,
+            tabstop=4
+        ):
+        """Initialize the class. Still adding more keyword arguments.
+
+        Parameters
+        ----------
+        TODO
+        """
         self.rlobj = rlobj
         self.exit_dispatch = {}
         self.key_dispatch = {}
-        self.argument = 1
-        self.prevargument = None
+        self.argument = argument
+        self.prevargument = prevargument
         self.l_buffer = lineobj.ReadLineTextBuffer("")
         self._history = history.LineHistory()
         self.completer_delims = " \t\n\"\\'`@$><=;|&{("
-        self.show_all_if_ambiguous = "on"
-        self.mark_directories = "on"
-        self.complete_filesystem = "off"
-        self.completer = None
-        self.begidx = 0
-        self.endidx = 0
-        self.tabstop = 4
+        self.show_all_if_ambiguous = show_all_if_ambiguous
+        self.mark_directories = mark_directories
+        self.complete_filesystem = complete_filesystem
+        self.completer = completer
+        self.begidx = begidx
+        self.endidx = endidx
+        self.tabstop = tabstop
         self.startup_hook = None
         self.pre_input_hook = None
         self.first_prompt = True
         self.cursor_size = 25
-
         self.prompt = ">>> "
 
         # Paste settings
@@ -112,9 +134,8 @@ class BaseMode(object):
     _clear_after = property(_g("_clear_after"))
     _update_prompt_pos = property(_g("_update_prompt_pos"))
 
-    # not used in basemode or emacs
-
     def process_keyevent(self, keyinfo):
+        """Optional methods. Not used in emacs."""
         raise NotImplementedError
 
     def readline_setup(self, prompt=""):
@@ -167,7 +188,17 @@ class BaseMode(object):
         return out
 
     def _bind_key(self, key, func):
-        """setup the mapping from key to call the function."""
+        """Setup the mapping from key to call the function.
+
+        Parameters
+        ----------
+        func : function
+            Must be callable.
+
+        Raises
+        ------
+        ReadlineError
+        """
         if not callable(func):
             print("Trying to bind non method to keystroke:%s,%s" % (key, func))
             raise ReadlineError(
@@ -179,21 +210,24 @@ class BaseMode(object):
         self.key_dispatch[keyinfo] = func
 
     def _bind_exit_key(self, key):
-        """setup the mapping from key to call the function."""
+        """Setup the mapping from key to call the function."""
         keyinfo = make_KeyPress_from_keydescr(key.lower()).tuple()
         self.exit_dispatch[keyinfo] = None
 
-    def init_editing_mode(self, e):  # (C-e)
-        """When in vi command mode, this causes a switch to emacs editing
-        mode."""
+    def init_editing_mode(self, *args):  # (C-e)
+        """Initialize the editing mode. Accepts *args but doesn't require args.
 
+        Simply provided to allow function calls of `None`.
+        """
         raise NotImplementedError
 
     # completion commands
 
     def _get_completions(self):
         """Return a list of possible completions for the string ending at the point.
-        Also set begidx and endidx in the process."""
+
+        Also set begidx and endidx in the process.
+        """
         completions = []
         self.begidx = self.l_buffer.point
         self.endidx = self.l_buffer.point
@@ -267,9 +301,11 @@ class BaseMode(object):
         self._print_prompt()
 
     def complete(self, e):  # (TAB)
-        """Attempt to perform completion on the text before point. The
-        actual completion performed is application-specific. The default is
-        filename completion."""
+        """Attempt to perform completion on the text before point.
+
+        The actual completion performed is application-specific.
+        The default is filename completion.
+        """
         completions = self._get_completions()
         if completions:
             cprefix = commonprefix(completions)
@@ -288,14 +324,13 @@ class BaseMode(object):
         self.finalize()
 
     def possible_completions(self, e):  # (M-?)
-        """List the possible completions of the text before point. """
+        """List the possible completions of the text before point."""
         completions = self._get_completions()
         self._display_completions(completions)
         self.finalize()
 
     def insert_completions(self, e):  # (M-*)
-        """Insert all completions of the text before point that would have
-        been generated by possible-completions."""
+        """Insert completions generated by `possible_completions`."""
         completions = self._get_completions()
         b = self.begidx
         e = self.endidx
@@ -310,14 +345,18 @@ class BaseMode(object):
 
     def menu_complete(self, e):  # ()
         """Similar to complete, but replaces the word to be completed with a
-        single match from the list of possible completions. Repeated
-        execution of menu-complete steps through the list of possible
-        completions, inserting each match in turn. At the end of the list of
-        completions, the bell is rung (subject to the setting of bell-style)
-        and the original text is restored. An argument of n moves n
-        positions forward in the list of matches; a negative argument may be
-        used to move backward through the list. This command is intended to
-        be bound to TAB, but is unbound by default."""
+        single match from the list of possible completions.
+
+        Repeated execution of menu-complete steps through the list of possible
+        completions, inserting each match in turn.
+
+        At the end of the list of completions, the bell is rung (subject to the
+        setting of bell-style) and the original text is restored.
+
+        An argument of n moves n positions forward in the list of matches; a
+        negative argument may be used to move backward through the list. This
+        command is intended to be bound to TAB, but is unbound by default.
+        """
         self.finalize()
 
     # Methods below here are bindable emacs functions
@@ -328,57 +367,65 @@ class BaseMode(object):
         self.finalize()
 
     def beginning_of_line(self, e):  # (C-a)
-        """Move to the start of the current line. """
+        """Move to the start of the current line."""
         self.l_buffer.beginning_of_line()
         self.finalize()
 
     def end_of_line(self, e):  # (C-e)
-        """Move to the end of the line. """
+        """Move to the end of the line."""
         self.l_buffer.end_of_line()
         self.finalize()
 
     def forward_char(self, e):  # (C-f)
-        """Move forward a character. """
+        """Move forward a character."""
         self.l_buffer.forward_char(self.argument_reset)
         self.finalize()
 
     def backward_char(self, e):  # (C-b)
-        """Move back a character. """
+        """Move back a character."""
         self.l_buffer.backward_char(self.argument_reset)
         self.finalize()
 
     def forward_word(self, e):  # (M-f)
-        """Move forward to the end of the next word. Words are composed of
-        letters and digits."""
+        """Move forward to the end of the next word.
+
+        Words are composed of letters and digits.
+        """
         self.l_buffer.forward_word(self.argument_reset)
         self.finalize()
 
     def backward_word(self, e):  # (M-b)
-        """Move back to the start of the current or previous word. Words are
-        composed of letters and digits."""
+        """Move back to the start of the current or previous word.
+
+        Words are composed of letters and digits.
+        """
         self.l_buffer.backward_word(self.argument_reset)
         self.finalize()
 
     def forward_word_end(self, e):  # ()
-        """Move forward to the end of the next word. Words are composed of
-        letters and digits."""
+        """Move forward to the end of the next word.
+
+        Words are composed of letters and digits.
+        """
         self.l_buffer.forward_word_end(self.argument_reset)
         self.finalize()
 
     def backward_word_end(self, e):  # ()
-        """Move forward to the end of the next word. Words are composed of
-        letters and digits."""
+        """Move forward to the end of the next word.
+
+        Words are composed of letters and digits.
+        """
         self.l_buffer.backward_word_end(self.argument_reset)
         self.finalize()
 
     # Movement with extend selection
     def beginning_of_line_extend_selection(self, e):  #
-        """Move to the start of the current line. """
+        """Move to the start of the current line."""
         self.l_buffer.beginning_of_line_extend_selection()
         self.finalize()
 
     def end_of_line_extend_selection(self, e):  #
-        """Move to the end of the line. """
+        """Move to the end of the line."""
         self.l_buffer.end_of_line_extend_selection()
         self.finalize()
 
@@ -393,53 +440,69 @@ class BaseMode(object):
         self.finalize()
 
     def forward_word_extend_selection(self, e):  #
-        """Move forward to the end of the next word. Words are composed of
-        letters and digits."""
+        """Move forward to the end of the next word.
+
+        Words are composed of letters and digits.
+        """
         self.l_buffer.forward_word_extend_selection(self.argument_reset)
         self.finalize()
 
     def backward_word_extend_selection(self, e):  #
-        """Move back to the start of the current or previous word. Words are
-        composed of letters and digits."""
+        """Move back to the start of the current or previous word.
+
+        Words are composed of letters and digits.
+        """
         self.l_buffer.backward_word_extend_selection(self.argument_reset)
         self.finalize()
 
     def forward_word_end_extend_selection(self, e):  #
-        """Move forward to the end of the next word. Words are composed of
-        letters and digits."""
+        """Move forward to the end of the next word.
+
+        Words are composed of letters and digits.
+        """
         self.l_buffer.forward_word_end_extend_selection(self.argument_reset)
         self.finalize()
 
     def backward_word_end_extend_selection(self, e):  #
-        """Move forward to the end of the next word. Words are composed of
-        letters and digits."""
+        """Move forward to the end of the next word.
+
+        Words are composed of letters and digits.
+        """
         self.l_buffer.forward_word_end_extend_selection(self.argument_reset)
         self.finalize()
 
     # Change case
 
     def upcase_word(self, e):  # (M-u)
-        """Uppercase the current (or following) word. With a negative
-        argument, uppercase the previous word, but do not move the cursor."""
+        """Uppercase the current (or following) word.
+
+        With a negative argument, uppercase the previous word, but do not move
+        the cursor.
+        """
         self.l_buffer.upcase_word()
         self.finalize()
 
     def downcase_word(self, e):  # (M-l)
-        """Lowercase the current (or following) word. With a negative
-        argument, lowercase the previous word, but do not move the cursor."""
+        """Lowercase the current (or following) word.
+
+        With a negative argument, lowercase the previous word, but do not move
+        the cursor.
+        """
         self.l_buffer.downcase_word()
         self.finalize()
 
     def capitalize_word(self, e):  # (M-c)
-        """Capitalize the current (or following) word. With a negative
-        argument, capitalize the previous word, but do not move the cursor."""
+        """Capitalize the current (or following) word.
+
+        With a negative argument, capitalize the previous word, but do not move
+        the cursor.
+        """
         self.l_buffer.capitalize_word()
         self.finalize()
 
     ########
     def clear_screen(self, e):  # (C-l)
-        """Clear the screen and redraw the current line, leaving the current
-        line at the top of the screen."""
+        """Redraw the line, leaving it at the top of the screen."""
         self.console.page()
         self.finalize()
 
@@ -448,17 +511,24 @@ class BaseMode(object):
         self.finalize()
 
     def accept_line(self, e):  # (Newline or Return)
-        """Accept the line regardless of where the cursor is. If this line
-        is non-empty, it may be added to the history list for future recall
-        with add_history(). If this line is a modified history line, the
-        history line is restored to its original state."""
+        """Accept the line regardless of where the cursor is.
+
+        If this line is non-empty, it may be added to the history list for
+        future recall with `add_history`.
+
+        If this line is a modified history line, the history line is restored
+        to its original state.
+        """
         self.finalize()
         return True
 
     def delete_char(self, e):  # (C-d)
-        """Delete the character at point. If point is at the beginning of
-        the line, there are no characters in the line, and the last
-        character typed was not bound to delete-char, then return EOF."""
+        """Delete the character at point.
+
+        If point is at the beginning of the line, there are no characters in
+        the line, and the last character typed was not bound to
+        delete-char, then return EOF.
+        """
         self.l_buffer.delete_char(self.argument_reset)
         self.finalize()
 
@@ -496,8 +566,11 @@ class BaseMode(object):
     #   Paste from clipboard
 
     def paste(self, e):
-        """Paste windows clipboard.
-        Assume single line strip other lines and end of line markers and trailing spaces"""  # (Control-v)
+        """Paste windows clipboard. :kbd:`Control-v`.
+
+        Assume single line strip other lines and end of line markers and
+        trailing spaces.
+        """
         if self.enable_win32_clipboard:
             txt = clipboard.get_clipboard_text_and_convert(False)
             txt = txt.split("\n")[0].strip("\r").strip("\n")
@@ -507,8 +580,10 @@ class BaseMode(object):
 
     def paste_mulitline_code(self, e):
         """Paste windows clipboard as multiline code.
-        Removes any empty lines in the code"""
-        reg = re.compile("\r?\n")
+
+        Removes any empty lines in the code.
+        """
+        reg = re.compile(r"\r?\n")
         if self.enable_win32_clipboard:
             txt = clipboard.get_clipboard_text_and_convert(False)
             t = reg.split(txt)

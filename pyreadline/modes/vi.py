@@ -1,4 +1,23 @@
 # -*- coding: utf-8 -*-
+"""Vi Mode.
+
+Vi input states
+---------------
+
+Sequence of possible states are in the order below.:
+
+_VI_BEGIN = "vi_begin"
+_VI_MULTI1 = "vi_multi1"
+_VI_ACTION = "vi_action"
+_VI_MULTI2 = "vi_multi2"
+_VI_MOTION = "vi_motion"
+_VI_MOTION_ARGUMENT = "vi_motion_argument"
+_VI_REPLACE_ONE = "vi_replace_one"
+_VI_TEXT = "vi_text"
+_VI_SEARCH = "vi_search"
+_VI_END = "vi_end"
+
+"""
 # *****************************************************************************
 #       Copyright (C) 2003-2006 Gary Bishop.
 #       Copyright (C) 2006  Michael Graz. <mgraz@plan10.com>
@@ -9,11 +28,38 @@
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
 import os
-import pyreadline.logger as logger
+
+# import pyreadline.logger as logger
 from pyreadline.logger import log
-import pyreadline.lineeditor.lineobj as lineobj
-import pyreadline.lineeditor.history as history
-from . import basemode
+from pyreadline.lineeditor import lineobj
+# from pyreadline.lineeditor import history
+from pyreadline.modes import basemode
+
+
+# Globals:
+
+_VI_BEGIN = "vi_begin"
+_VI_MULTI1 = "vi_multi1"
+_VI_ACTION = "vi_action"
+_VI_MULTI2 = "vi_multi2"
+_VI_MOTION = "vi_motion"
+_VI_MOTION_ARGUMENT = "vi_motion_argument"
+_VI_REPLACE_ONE = "vi_replace_one"
+_VI_TEXT = "vi_text"
+_VI_SEARCH = "vi_search"
+_VI_END = "vi_end"
+
+
+_vi_dct_matching = {
+    "<": (">", +1),
+    ">": ("<", -1),
+    "(": (")", +1),
+    ")": ("(", -1),
+    "[": ("]", +1),
+    "]": ("[", -1),
+    "{": ("}", +1),
+    "}": ("{", -1),
+}
 
 
 class ViMode(basemode.BaseMode):
@@ -52,8 +98,15 @@ class ViMode(basemode.BaseMode):
 
     # Methods below here are bindable emacs functions
 
-    def init_editing_mode(self, e):  # (M-C-j)
-        """Initialize vi editingmode"""
+    def init_editing_mode(self, *args):  # (M-C-j)
+        """Initialize vi editingmode.
+
+        Typically bound to :kbd:`M-C-j`.
+
+        Used to accept parameter 'e' but didn't use it. However this function
+        is called in enough places in the repo that we need to keep
+        the interface consistent even if we ignore the 'args'.
+        """
         self.show_all_if_ambiguous = "on"
         self.key_dispatch = {}
         self.__vi_insert_mode = None
@@ -317,23 +370,9 @@ class ViMode(basemode.BaseMode):
             return self.vi_key(e)
 
 
-# vi input states
-# sequence of possible states are in the order below
-_VI_BEGIN = "vi_begin"
-_VI_MULTI1 = "vi_multi1"
-_VI_ACTION = "vi_action"
-_VI_MULTI2 = "vi_multi2"
-_VI_MOTION = "vi_motion"
-_VI_MOTION_ARGUMENT = "vi_motion_argument"
-_VI_REPLACE_ONE = "vi_replace_one"
-_VI_TEXT = "vi_text"
-_VI_SEARCH = "vi_search"
-_VI_END = "vi_end"
-
-# vi helper class
-
-
 class ViCommand:
+    """Vi Helper Class."""
+
     def __init__(self, readline):
         self.readline = readline
         self.lst_char = []
@@ -1034,7 +1073,7 @@ class ViExternalEditor:
         return tempfile.mktemp(prefix="readline-", suffix=".py")
 
     def file_open(self, filename, mode):
-        return file(filename, mode)
+        return open(filename, mode)
 
     def file_remove(self, filename):
         os.remove(filename)
@@ -1218,17 +1257,6 @@ def vi_pos_to_char_backward(line, char, index=0, count=1):
         return index + 1
     return index
 
-
-_vi_dct_matching = {
-    "<": (">", +1),
-    ">": ("<", -1),
-    "(": (")", +1),
-    ")": ("(", -1),
-    "[": ("]", +1),
-    "]": ("[", -1),
-    "{": ("}", +1),
-    "}": ("{", -1),
-}
 
 
 def vi_pos_matching(line, index=0):

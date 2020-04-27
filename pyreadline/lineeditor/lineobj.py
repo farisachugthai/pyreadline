@@ -361,15 +361,14 @@ class TextLine(object):
                 self.point += 1
 
     def __getitem__(self, key):
-        # Check if key is LineSlice, convert to regular slice
-        # and continue processing
+        """Check if key is LineSlice, convert to regular slice and continue processing."""
         if isinstance(key, LineSlice):
             key = key(self)
         if isinstance(key, slice):
             if key.step is None:
                 pass
             else:
-                raise Error
+                raise TypeError
             if key.start is None:
                 start = StartOfLine(self)
             elif isinstance(key.start, LinePositioner):

@@ -61,7 +61,7 @@ global pyreadline_logger
 
 pyreadline_logger = init_logger(
     log_level=logging.WARNING,
-    fmt_msg="[ %(name)s : %(relativeCreated)d :] %(levelname)s : %(module)s : --- %(message)s ",
+    fmt_msg="[ %(funcName)s : %(created)f - %(relativeCreated)d :] %(levelname)s : %(module)s : --- %(message)s ",
 )
 
 # socket_handler = None
