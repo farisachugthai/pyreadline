@@ -63,6 +63,7 @@ a python syntax is used instead. The available commands are:
    Let's add them! Btw bindable isn't a word.
 
 Methods as defined by the ReadLineTextBuffer
+============================================
 
 .. class:: ReadLineTextBuffer(txtstr, point=None, mark=None, kwargs)
 

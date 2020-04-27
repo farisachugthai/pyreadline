@@ -8,14 +8,18 @@ Welcome to pyreadline's documentation!
 Contents:
 
 .. toctree::
+   :caption: Table of Contents
    :maxdepth: 2
 
    introduction
    installation
    usage
    bindable_commands
+   modes
    known_issues
    changelog
+
+
    
 Indices and tables
 ==================

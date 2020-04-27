@@ -14,18 +14,30 @@ Version 2.0 runs on Python 2.6, 2.7, and 3+ using the same code.
 
 Features:
 
-*  Keyboard text selection and copy/paste
-*  Shift-Arrow keys for text selection
-*  Control-c can be used for copy. Activate with `allow_ctrl_c(True)` in config file
-   `pyreadlineconfig.ini`.
-*  Double tapping Ctrl-C will raise a `KeyboardInterrupt`
+*  Keybindings in accordance with the GNU readline library
+
+*  :kbd:`Shift`-Arrow keys for text selection
+
+*  :kbd:`Control-C` for copy
+
+   * Activate with `allow_ctrl_c(True)` in config file. An example is given at
+     :file:`pyreadline/configuration/pyreadlineconfig.ini`
+
+*  Double tapping :kbd:`Control-C` will raise a `KeyboardInterrupt`
+
    * use `ctrl_c_tap_time_interval(x)` where x is your preferred tap time window
+
    * default 0.3s
-*  standard `paste` which pastes first line of content on clipboard.
-*  IPython_paste, which pastes tab-separated data as list of lists
-   or numpy array if all data is numeric
+
+*  standard `paste` which pastes first line of content on clipboard
+
+*  Alternatively, users can set the option ``IPython_paste``
+
+   * which pastes tab-separated data as list of lists or numpy array if all data is numeric
+
 *  `paste_multiline_code` pastes code that spans multiple lines or has
    embedded newlines in it.
+
    * Useful for copy pasting code
 
 The latest development version is always available at the GitHub `repository`_.

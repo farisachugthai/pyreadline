@@ -73,3 +73,4 @@ Example of a Configuration File
 Here is the example config file shipped with pyreadline:
 
 .. literalinclude:: ../../pyreadline/configuration/pyreadlineconfig.ini
+

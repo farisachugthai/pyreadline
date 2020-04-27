@@ -13,7 +13,6 @@
 
 import sys
 import os
-import pyreadline.release
 
 # If your extensions are in another directory, add it here. If the directory
 # is relative to the documentation root, use os.path.abspath to make it
@@ -58,9 +57,10 @@ copyright = "2008, J. Stenarson"
 # other places throughout the built documents.
 #
 # The short X.Y version.
-version = pyreadline.release.version.rsplit(".", 1)[0]
+# version = pyreadline.release.version.rsplit(".", 1)[0]
+
 # The full version, including alpha/beta/rc tags.
-release = pyreadline.release.version
+# release = pyreadline.release.version
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
