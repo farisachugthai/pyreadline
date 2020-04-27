@@ -25,6 +25,7 @@ from pyreadline.unicode_helper import ensure_unicode, ensure_str
 from pyreadline.logger import log
 from pyreadline.modes import editingmodes
 from pyreadline.error import ReadlineError, GetSetError, MockConsoleError
+
 # from pyreadline import release
 from pyreadline.py3k_compat import callable, execfile
 
@@ -69,9 +70,14 @@ class BaseReadlineABC(abc.ABC):
 
 
 class BaseReadline(BaseReadlineABC):
-
-    def __init__(self, allow_ctrl_c=False, ctrl_c_tap_time_interval=0.3,
-            debug=False, bell_style="none", mark=-1):
+    def __init__(
+        self,
+        allow_ctrl_c=False,
+        ctrl_c_tap_time_interval=0.3,
+        debug=False,
+        bell_style="none",
+        mark=-1,
+    ):
         self.allow_ctrl_c = allow_ctrl_c
         self.ctrl_c_tap_time_interval = ctrl_c_tap_time_interval
         self.debug = debug
@@ -302,29 +308,29 @@ class BaseReadline(BaseReadlineABC):
 
     def _color_trtable(self):
         return {
-        "black": 0,
-        "darkred": 4,
-        "darkgreen": 2,
-        "darkyellow": 6,
-        "darkblue": 1,
-        "darkmagenta": 5,
-        "darkcyan": 3,
-        "gray": 7,
-        "red": 4 + 8,
-        "green": 2 + 8,
-        "yellow": 6 + 8,
-        "blue": 1 + 8,
-        "magenta": 5 + 8,
-        "cyan": 3 + 8,
-        "white": 7 + 8,
-    }
+            "black": 0,
+            "darkred": 4,
+            "darkgreen": 2,
+            "darkyellow": 6,
+            "darkblue": 1,
+            "darkmagenta": 5,
+            "darkcyan": 3,
+            "gray": 7,
+            "red": 4 + 8,
+            "green": 2 + 8,
+            "yellow": 6 + 8,
+            "blue": 1 + 8,
+            "magenta": 5 + 8,
+            "cyan": 3 + 8,
+            "white": 7 + 8,
+        }
 
     def bind_key(self, key, name):
         import types
 
         if callable(name):
             self.mode._bind_key(key, types.MethodType(name, modes[mode]))
-        elif hasattr(self.mode. name):
+        elif hasattr(self.mode.name):
             self.mode._bind_key(key, getattr(modes[mode], name))
         else:
             print("Trying to bind unknown command '%s' to key '%s'" % (name, key))
@@ -349,8 +355,8 @@ class BaseReadline(BaseReadlineABC):
         self.command_color = self._color_trtable.get(color.lower(), 7)
 
     # def setmode(self, name):
-        # Womp. I may have fucked this quite critical method up a little
-        # self.mode = name
+    # Womp. I may have fucked this quite critical method up a little
+    # self.mode = name
 
     def setkill_ring_to_clipboard(self, killring):
         import pyreadline.lineeditor.lineobj
@@ -358,9 +364,7 @@ class BaseReadline(BaseReadlineABC):
         pyreadline.lineeditor.lineobj.kill_ring_to_clipboard = killring
 
     def sethistoryfilename(self, filename):
-        self.mode._history.history_filename = os.path.expanduser(
-            ensure_str(filename)
-        )
+        self.mode._history.history_filename = os.path.expanduser(ensure_str(filename))
 
     def setbellstyle(self, mode):
         self.bell_style = mode

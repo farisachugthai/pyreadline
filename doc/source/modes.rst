@@ -2,8 +2,17 @@
 Modes
 =====
 
-Here are the different modes that user's can operate in.
+The following is the base mode class that all concrete classes utilize.
 
+Base
+-----
+
+.. automodule:: pyreadline.modes.basemode
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Here are the different modes that user's can operate in.
 
 Emacs
 -----

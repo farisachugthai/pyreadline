@@ -72,7 +72,9 @@ class SocketStream(object):
     def __init__(self, host=None, port=None):
         self.logsocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.host = host if host is not None else "localhost"
-        self.port = port if port is not None else logging.handlers.DEFAULT_TCP_LOGGING_PORT
+        self.port = (
+            port if port is not None else logging.handlers.DEFAULT_TCP_LOGGING_PORT
+        )
 
     def write(self, s):
         self.logsocket.sendto(ensure_str(s), (self.host, self.port))
@@ -85,7 +87,9 @@ class SocketStream(object):
 
 
 def start_socket_log(formatter=None, log_level=30):
-    socket_handler = logging.StreamHandler(SocketStream("localhost",  logging.handlers.DEFAULT_TCP_LOGGING_PORT))
+    socket_handler = logging.StreamHandler(
+        SocketStream("localhost", logging.handlers.DEFAULT_TCP_LOGGING_PORT)
+    )
     if formatter is None:
         formatter = logging.Formatter()
     socket_handler.setFormatter(formatter)

@@ -18,9 +18,10 @@ try:
 except ImportError:
     run_module = None
 
+
 def oscmd(c):
     if run is not None:
-        cmd = [sys.executable, '-m'].extend(shlex.split(shlex.quote(c)))
+        cmd = [sys.executable, "-m"].extend(shlex.split(shlex.quote(c)))
         return run(cmd)
     else:
         os.system(c)
@@ -89,14 +90,16 @@ def main():
     oscmd("pdflatex pyreadline.tex")
 
     # Create a manual/ directory with final html/pdf output
+
+
 #    os.chdir(topdir)
 #    oscmd('rm -rf manual')
 #    oscmd('mkdir manual')
 #    oscmd('cp -r build/html/*.html build/html/_static manual/')
 #    oscmd('cp build/latex/ipython.pdf manual/')
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if run_module is None:
         main()
     else:
-        run_module('sphinx', init_globals=globals())
+        run_module("sphinx", init_globals=globals())

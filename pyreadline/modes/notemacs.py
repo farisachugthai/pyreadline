@@ -23,6 +23,7 @@ from pyreadline.modes import basemode
 
 # by the way. what the hell is notemacs mode?
 
+
 class NotEmacsMode(basemode.BaseMode):
     mode = "notemacs"
 

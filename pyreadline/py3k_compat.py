@@ -21,6 +21,7 @@ if sys.version_info[0] >= 3:
     # TODO: if sys.version_info < (3,6): class ModuleNotFoundError(ImportError)
 
     from builtins import str, bytes
+
     # bytes = bytes
     from io import StringIO
     import collections
@@ -49,4 +50,3 @@ else:
 
     # Wtf??
     bytes = str
-

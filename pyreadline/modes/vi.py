@@ -32,6 +32,7 @@ import os
 # import pyreadline.logger as logger
 from pyreadline.logger import log
 from pyreadline.lineeditor import lineobj
+
 # from pyreadline.lineeditor import history
 from pyreadline.modes import basemode
 
@@ -1256,7 +1257,6 @@ def vi_pos_to_char_backward(line, char, index=0, count=1):
     if index >= 0:
         return index + 1
     return index
-
 
 
 def vi_pos_matching(line, index=0):

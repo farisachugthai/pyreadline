@@ -22,5 +22,3 @@ class NotAWordError(IndexError):
 
 class MockConsoleError(ReadlineError):
     pass
-
-

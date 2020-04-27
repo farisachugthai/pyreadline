@@ -8,7 +8,7 @@ Commands to bind to
 This appendix will contain descriptions of all commands to bind to.
 
 Configuration file
-------------------
+==================
 
 The configuration file is read from the users home directory and is named
 pyreadlineconfig.ini. The files syntax is not the same as for GNU readline but
@@ -62,8 +62,16 @@ a python syntax is used instead. The available commands are:
 .. For now you have to look in the sourcecode. Check the readline class of the file rlmain.py
    Let's add them! Btw bindable isn't a word.
 
+Line Editor API
+===============
+
+.. autoclass:: TextLine
+   :members:
+
+Many commands are contained therein.
+
 Methods as defined by the ReadLineTextBuffer
-============================================
+--------------------------------------------
 
 .. class:: ReadLineTextBuffer(txtstr, point=None, mark=None, kwargs)
 
@@ -123,4 +131,12 @@ Methods as defined by the ReadLineTextBuffer
    .. method:: upcase_word()
 
    .. method:: downcase_word()
+
+History
+========
+
+.. automodule:: pyreadline.lineeditor.history
+   :members:
+   :undoc-members:
+   :show-inheritance:
 

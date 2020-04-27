@@ -35,6 +35,7 @@ try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
+
     find_packages = None
 else:
     from setuptools import find_packages
@@ -45,6 +46,7 @@ except ImportError:
     cmd_class = {}
 else:
     from sphinx.setup_command import BuildDoc
+
     cmd_class = {"build_sphinx": BuildDoc}
 
 if find_packages is not None:
@@ -87,7 +89,7 @@ with codecs.open(README, encoding="utf-8") as f:
     long_description = "\n" + f.read()
 
 
-keywords =  ["readline", "windows", "pyreadline"]
+keywords = ["readline", "windows", "pyreadline"]
 platforms = ["Windows XP/2000/NT", "Windows 95/98/ME", "Windows 10"]
 url = "https://github.com/pyreadline/pyreadline"
 download_url = "https://pypi.python.org/pypi/pyreadline"
@@ -111,31 +113,30 @@ setup(
     maintainer=authors["Jorgen"][0],
     maintainer_email=authors["Jorgen"][1],
     license=license,
-
     # where did we define classifiers?
     classifiers=[
-            # Trove classifiers
-            # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
-            "Development Status :: 5 - Production/Stable",
-            "Environment :: Console",
-            "Intended Audience :: Developers",
-            "License :: OSI Approved :: BSD License",
-            "Natural Language :: English",
-            "Operating System :: Microsoft :: Windows",
-            "Operating System :: Microsoft :: Windows :: Windows 10",
-            "Programming Language :: Python",
-            "Programming Language :: Python :: 2",
-            "Programming Language :: Python :: 2.6",
-            "Programming Language :: Python :: 2.7",
-            "Programming Language :: Python :: 3",
-            "Programming Language :: Python :: 3.2",
-            "Programming Language :: Python :: 3.3",
-            "Programming Language :: Python :: 3.4",
-            "Programming Language :: Python :: 3.5",
-            "Programming Language :: Python :: 3.6",
-            "Programming Language :: Python :: 3.7",
-            "Programming Language :: Python :: 3.8",
-            "Programming Language :: Python :: Implementation :: CPython",
+        # Trove classifiers
+        # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
+        "Development Status :: 5 - Production/Stable",
+        "Environment :: Console",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: BSD License",
+        "Natural Language :: English",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: Microsoft :: Windows :: Windows 10",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 2.6",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.2",
+        "Programming Language :: Python :: 3.3",
+        "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: Implementation :: CPython",
     ],
     url=url,
     # check that this exists in setuptools

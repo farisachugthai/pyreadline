@@ -16,6 +16,7 @@ import sys
 import traceback
 
 from pyreadline import clipboard
+
 # from pyreadline import logger
 from pyreadline.error import ReadlineError
 from pyreadline.lineeditor import history
@@ -37,18 +38,22 @@ class BaseMode(object):
         Should be defined by all classes
 
     """
+
     mode = "base"
 
-    def __init__(self,
-            rlobj, argument=1, prevargument=None,
-            show_all_if_ambiguous="on",
-            mark_directories="on",
-            complete_filesystem="off",
-            completer=None,
-            begidx=0,
-            endidx=0,
-            tabstop=4
-        ):
+    def __init__(
+        self,
+        rlobj,
+        argument=1,
+        prevargument=None,
+        show_all_if_ambiguous="on",
+        mark_directories="on",
+        complete_filesystem="off",
+        completer=None,
+        begidx=0,
+        endidx=0,
+        tabstop=4,
+    ):
         """Initialize the class. Still adding more keyword arguments.
 
         Parameters
