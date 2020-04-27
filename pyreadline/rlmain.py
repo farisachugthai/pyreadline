@@ -10,6 +10,7 @@
 from __future__ import print_function, unicode_literals, absolute_import
 
 import abc
+import logging
 import os
 import re
 import sys
@@ -30,14 +31,15 @@ from pyreadline.error import ReadlineError, GetSetError, MockConsoleError
 from pyreadline.py3k_compat import callable, execfile
 
 
-in_ironpython = "IronPython" in sys.version
-if in_ironpython:  # ironpython does not provide a prompt string to readline
-    # we never use this import though?
-    import System
+# in_ironpython = "IronPython" in sys.version
+# if in_ironpython:  # ironpython does not provide a prompt string to readline
+#     # we never use this import though?
+#     import System
 
-    default_prompt = ">>> "
-else:
-    default_prompt = ""
+# or this global?
+#     default_prompt = ">>> "
+# else:
+#     default_prompt = ""
 
 
 class MockConsole(object):
@@ -75,6 +77,7 @@ class BaseReadline(BaseReadlineABC):
         allow_ctrl_c=False,
         ctrl_c_tap_time_interval=0.3,
         debug=False,
+        callback=None,
         bell_style="none",
         mark=-1,
     ):
@@ -83,7 +86,7 @@ class BaseReadline(BaseReadlineABC):
         self.debug = debug
         self.bell_style = bell_style
         self.mark = mark
-
+        self.callback = callback
         self.disable_readline = False
         # this code needs to follow l_buffer and history creation
         self.editingmodes = [mode(self) for mode in editingmodes]
@@ -94,8 +97,7 @@ class BaseReadline(BaseReadlineABC):
             log(mode, 0)
             mode.init_editing_mode(None)
         self.mode = self.editingmodes[0]
-        log("\n".join(self.mode.rl_settings_to_string()))
-        self.callback = None
+
 
     @property
     def console(self):
@@ -329,9 +331,9 @@ class BaseReadline(BaseReadlineABC):
         import types
 
         if callable(name):
-            self.mode._bind_key(key, types.MethodType(name, modes[mode]))
+            self.mode._bind_key(key, types.MethodType(name, self.mode))
         elif hasattr(self.mode.name):
-            self.mode._bind_key(key, getattr(modes[mode], name))
+            self.mode._bind_key(key, getattr(self.mode, name))
         else:
             print("Trying to bind unknown command '%s' to key '%s'" % (name, key))
 
@@ -639,7 +641,7 @@ class Readline(BaseReadline):
         self._update_line()
         return result
 
-    def nop(e):
+    def nop(self, e):
         pass
 
     def readline_setup(self, prompt=""):

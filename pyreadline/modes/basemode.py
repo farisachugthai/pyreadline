@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""This entire module is 1 class. Simple BaseMode."""
+
 # *****************************************************************************
 #       Copyright (C) 2003-2006 Gary Bishop.
 #       Copyright (C) 2006  Jorgen Stenarson. <jorgen.stenarson@bostream.nu>
@@ -26,18 +28,9 @@ from pyreadline.keysyms.common import make_KeyPress_from_keydescr
 from pyreadline.py3k_compat import callable
 from pyreadline.unicode_helper import ensure_str, ensure_unicode
 
-in_ironpython = "IronPython" in sys.version
-
 
 class BaseMode(object):
-    """The base class that Emacs, Vi and NotEmacs inherit from.
-
-    Attributes
-    ----------
-    mode : str
-        Should be defined by all classes
-
-    """
+    """The base class that Emacs, Vi and NotEmacs inherit from."""
 
     mode = "base"
 
@@ -67,7 +60,7 @@ class BaseMode(object):
         self.prevargument = prevargument
         self.l_buffer = lineobj.ReadLineTextBuffer("")
         self._history = history.LineHistory()
-        self.completer_delims = " \t\n\"\\'`@$><=;|&{("
+        self.completer_delims = r" \t\n\"\\'`@$><=;|&{("
         self.show_all_if_ambiguous = show_all_if_ambiguous
         self.mark_directories = mark_directories
         self.complete_filesystem = complete_filesystem
@@ -97,7 +90,8 @@ class BaseMode(object):
     def __repr__(self):
         return "<BaseMode>"
 
-    def _gs(x):
+    def _gs(self, x):
+        # Might be a way of defining a property? wow.
         def g(self):
             return getattr(self.rlobj, x)
 
@@ -106,11 +100,9 @@ class BaseMode(object):
 
         return g, s
 
-    def _g(x):
-        def g(self):
-            return getattr(self.rlobj, x)
+    def _g(self, x):
+        return getattr(self.rlobj, x)
 
-        return g
 
     def _argreset(self):
         val = self.argument
@@ -119,25 +111,6 @@ class BaseMode(object):
             val = 1
         return val
 
-    argument_reset = property(_argreset)
-
-    # used in readline
-    ctrl_c_tap_time_interval = property(*_gs("ctrl_c_tap_time_interval"))
-    allow_ctrl_c = property(*_gs("allow_ctrl_c"))
-    _print_prompt = property(_g("_print_prompt"))
-    _update_line = property(_g("_update_line"))
-    console = property(_g("console"))
-    prompt_begin_pos = property(_g("prompt_begin_pos"))
-    prompt_end_pos = property(_g("prompt_end_pos"))
-
-    # used in completer _completions
-    #    completer_delims=property(*_gs("completer_delims"))
-    _bell = property(_g("_bell"))
-    bell_style = property(_g("bell_style"))
-
-    # used in emacs
-    _clear_after = property(_g("_clear_after"))
-    _update_prompt_pos = property(_g("_update_prompt_pos"))
 
     def process_keyevent(self, keyinfo):
         """Optional methods. Not used in emacs."""
@@ -166,6 +139,28 @@ class BaseMode(object):
                 self.pre_input_hook = None
 
     ####################################
+    # Properties
+
+    # i found a few class attributes
+    argument_reset = property(_argreset)
+
+    # used in readline
+    ctrl_c_tap_time_interval = property("ctrl_c_tap_time_interval")
+    allow_ctrl_c = property(("allow_ctrl_c"))
+    _print_prompt = property(("_print_prompt"))
+    _update_line = property(("_update_line"))
+    console = property(("console"))
+    prompt_begin_pos = property(("prompt_begin_pos"))
+    prompt_end_pos = property(("prompt_end_pos"))
+
+    # used in completer _completions
+    #    completer_delims=property(*s("completer_delims"))
+    _bell = property(("_bell"))
+    bell_style = property(("bell_style"))
+
+    # used in emacs
+    _clear_after = property(("_clear_after"))
+    _update_prompt_pos = property(("_update_prompt_pos"))
 
     def finalize(self):
         """Every bindable command should call this function for cleanup.
@@ -176,8 +171,12 @@ class BaseMode(object):
     def add_history(self, text):
         self._history.add_history(lineobj.ReadLineTextBuffer(text))
 
-    # Create key bindings:
-    def rl_settings_to_string(self):
+    # Create key bindings: {{{
+
+    def rl_settings_to_string(self, log_level=None):
+        # This is a dumb way of doing this but goddamn is this method annoying
+        if log_level is None:
+            return
         out = ["%-20s: %s" % ("show all if ambigous", self.show_all_if_ambiguous)]
         out.append("%-20s: %s" % ("mark_directories", self.mark_directories))
         out.append("%-20s: %s" % ("bell_style", self.bell_style))
@@ -220,13 +219,13 @@ class BaseMode(object):
         self.exit_dispatch[keyinfo] = None
 
     def init_editing_mode(self, *args):  # (C-e)
-        """Initialize the editing mode. Accepts *args but doesn't require args.
+        """Initialize the editing mode. Accepts ``*args`` but doesn't require args.
 
         Simply provided to allow function calls of `None`.
         """
         raise NotImplementedError
 
-    # completion commands
+    # completion commands: {{{
 
     def _get_completions(self):
         """Return a list of possible completions for the string ending at the point.
@@ -301,7 +300,7 @@ class BaseMode(object):
                 if i < len(completions):
                     self.console.write(completions[i].ljust(wmax + 1))
             self.console.write("\n")
-        if in_ironpython:
+        if "IronPython" in sys.version:
             self.prompt = sys.ps1
         self._print_prompt()
 
