@@ -9,4 +9,4 @@ MANIFEST
 *.pyo
 **tags**
 docs/build
-.venv
+.*venv*
