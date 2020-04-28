@@ -103,14 +103,12 @@ class BaseMode(object):
     def _g(self, x):
         return getattr(self.rlobj, x)
 
-
     def _argreset(self):
         val = self.argument
         self.argument = 0
         if val == 0:
             val = 1
         return val
-
 
     def process_keyevent(self, keyinfo):
         """Optional methods. Not used in emacs."""
@@ -177,12 +175,14 @@ class BaseMode(object):
         # This is a dumb way of doing this but goddamn is this method annoying
         if log_level is None:
             return
-        out = ["%-20s: %s" % ("show all if ambigous", self.show_all_if_ambiguous)]
+        out = ["%-20s: %s" %
+               ("show all if ambigous", self.show_all_if_ambiguous)]
         out.append("%-20s: %s" % ("mark_directories", self.mark_directories))
         out.append("%-20s: %s" % ("bell_style", self.bell_style))
         out.append("------------- key bindings ------------")
         tablepat = "%-7s %-7s %-7s %-15s %-15s "
-        out.append(tablepat % ("Control", "Meta", "Shift", "Keycode/char", "Function"))
+        out.append(tablepat %
+                   ("Control", "Meta", "Shift", "Keycode/char", "Function"))
         bindings = [
             (k[0], k[1], k[2], k[3], v.__name__) for k, v in self.key_dispatch.items()
         ]
@@ -243,7 +243,7 @@ class BaseMode(object):
                 if buf[self.begidx] in self.completer_delims:
                     self.begidx += 1
                     break
-            text = ensure_str("".join(buf[self.begidx : self.endidx]))
+            text = ensure_str("".join(buf[self.begidx: self.endidx]))
             log('complete text="%s"' % ensure_unicode(text))
             i = 0
             while 1:
@@ -258,7 +258,8 @@ class BaseMode(object):
                     completions.append(r)
                 else:
                     pass
-            log("text completions=<%s>" % list(map(ensure_unicode, completions)))
+            log("text completions=<%s>" %
+                list(map(ensure_unicode, completions)))
         if (self.complete_filesystem == "on") and not completions:
             # get the filename to complete
             while self.begidx > 0:
@@ -266,7 +267,7 @@ class BaseMode(object):
                 if buf[self.begidx] in " \t\n":
                     self.begidx += 1
                     break
-            text = ensure_str("".join(buf[self.begidx : self.endidx]))
+            text = ensure_str("".join(buf[self.begidx: self.endidx]))
             log('file complete text="%s"' % ensure_unicode(text))
             completions = list(
                 map(
@@ -316,8 +317,9 @@ class BaseMode(object):
             if len(cprefix) > 0:
                 rep = [c for c in cprefix]
                 point = self.l_buffer.point
-                self.l_buffer[self.begidx : self.endidx] = rep
-                self.l_buffer.point = point + len(rep) - (self.endidx - self.begidx)
+                self.l_buffer[self.begidx: self.endidx] = rep
+                self.l_buffer.point = point + \
+                    len(rep) - (self.endidx - self.begidx)
             if len(completions) > 1:
                 if self.show_all_if_ambiguous == "on":
                     self._display_completions(completions)

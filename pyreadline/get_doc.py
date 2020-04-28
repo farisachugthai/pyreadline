@@ -8,7 +8,8 @@ rl = rlmain.rl
 
 
 def get_doc(rl):
-    methods = [(x, getattr(rl, x)) for x in dir(rl) if callable(getattr(rl, x))]
+    methods = [(x, getattr(rl, x))
+               for x in dir(rl) if callable(getattr(rl, x))]
     return [(x, m.__doc__) for x, m in methods if m.__doc__]
 
 

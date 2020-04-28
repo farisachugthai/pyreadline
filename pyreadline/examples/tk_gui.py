@@ -97,7 +97,8 @@ class App:
 
     def _update_line(self):
         self.textvar.set(
-            "\n".join(self.lines + [self.prompt + " " + self.RL.get_line_buffer()])
+            "\n".join(self.lines + [self.prompt +
+                                    " " + self.RL.get_line_buffer()])
         )
 
 

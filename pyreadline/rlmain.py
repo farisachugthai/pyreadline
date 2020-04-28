@@ -19,7 +19,8 @@ from glob import glob
 
 from pyreadline.lineeditor import lineobj
 from pyreadline.lineeditor import history
-from pyreadline import clipboard, console, logger
+from pyreadline import clipboard, logger
+from pyreadline.console.console import Console
 
 from pyreadline.keysyms.common import make_KeyPress_from_keydescr
 from pyreadline.unicode_helper import ensure_unicode, ensure_str
@@ -49,7 +50,8 @@ class MockConsole(object):
     """
 
     def __setattr__(self, x):
-        raise MockConsoleError("Should not try to get attributes from MockConsole")
+        raise MockConsoleError(
+            "Should not try to get attributes from MockConsole")
 
     def cursor(self, size=50):
         pass
@@ -98,10 +100,9 @@ class BaseReadline(BaseReadlineABC):
             mode.init_editing_mode(None)
         self.mode = self.editingmodes[0]
 
-
     @property
     def console(self):
-        return console.Console()
+        return Console()
 
     def parse_and_bind(self, string):
         """Parse and execute single line of a readline init file."""
@@ -110,7 +111,8 @@ class BaseReadline(BaseReadlineABC):
             return
         try:
             if string.startswith("set"):
-                m = re.compile(r"set\s+([-a-zA-Z0-9]+)\s+(.+)\s*$").match(string)
+                m = re.compile(
+                    r"set\s+([-a-zA-Z0-9]+)\s+(.+)\s*$").match(string)
                 if m:
                     var_name = m.group(1)
                     val = m.group(2)
@@ -366,7 +368,8 @@ class BaseReadline(BaseReadlineABC):
         pyreadline.lineeditor.lineobj.kill_ring_to_clipboard = killring
 
     def sethistoryfilename(self, filename):
-        self.mode._history.history_filename = os.path.expanduser(ensure_str(filename))
+        self.mode._history.history_filename = os.path.expanduser(
+            ensure_str(filename))
 
     def setbellstyle(self, mode):
         self.bell_style = mode
@@ -438,7 +441,8 @@ class BaseReadline(BaseReadlineABC):
         The context it's executed in is in all the methods of this class.
         """
         if inputrcpath is None:
-            inputrcpath = os.path.expanduser(ensure_str("~/pyreadlineconfig.ini"))
+            inputrcpath = os.path.expanduser(
+                ensure_str("~/pyreadlineconfig.ini"))
 
         loc = {
             # "branch": release.branch,
@@ -505,7 +509,7 @@ class BaseReadline(BaseReadlineABC):
 
 
 class Readline(BaseReadline):
-    """Baseclass for readline based on a console."""
+    """Main class for readline based on a console."""
 
     def __init__(self, command_color=None, prompt_color=None):
         super(Readline, self).__init__()
@@ -521,7 +525,8 @@ class Readline(BaseReadline):
         if self.bell_style == "none":
             pass
         elif self.bell_style == "visible":
-            raise NotImplementedError("Bellstyle visible is not implemented yet.")
+            raise NotImplementedError(
+                "Bellstyle visible is not implemented yet.")
         elif self.bell_style == "audible":
             self.console.bell()
         else:
@@ -645,7 +650,7 @@ class Readline(BaseReadline):
         pass
 
     def readline_setup(self, prompt=""):
-        BaseReadline.readline_setup(self, prompt)
+        super(Readline, self).readline_setup(prompt)
         self._print_prompt()
         self._update_line()
 

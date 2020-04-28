@@ -7,7 +7,6 @@
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
 
-import cmd  # test
 import logging
 import logging.handlers
 import socket

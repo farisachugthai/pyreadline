@@ -1,4 +1,32 @@
 # -*- coding: utf-8 -*-
+"""
+###################################
+
+Based on recipe posted to ctypes-users
+see archive
+http://aspn.activestate.com/ASPN/Mail/Message/ctypes-users/1771866
+
+
+
+###################################################################################
+
+The Python win32clipboard lib functions work well enough ... except that they
+can only cut and paste items from within one application, not across
+applications or processes.
+
+I've written a number of Python text filters I like to run on the contents of
+the clipboard so I need to call the Windows clipboard API with global memory
+for my filters to work properly.
+
+Here's some sample code solving this problem using ctypes.
+
+This is my first work with ctypes.  It's powerful stuff, but passing arguments
+in and out of functions is tricky.  More sample code would have been helpful,
+hence this contribution.
+
+###################################################################################
+
+"""
 # *****************************************************************************
 #       Copyright (C) 2003-2006 Jack Trainor.
 #       Copyright (C) 2006  Jorgen Stenarson. <jorgen.stenarson@bostream.nu>
@@ -6,36 +34,12 @@
 #  Distributed under the terms of the BSD License.  The full license is in
 #  the file COPYING, distributed as part of this software.
 # *****************************************************************************
-###################################
-#
-# Based on recipe posted to ctypes-users
-# see archive
-# http://aspn.activestate.com/ASPN/Mail/Message/ctypes-users/1771866
-#
-#
-
-###################################################################################
-#
-# The Python win32clipboard lib functions work well enough ... except that they
-# can only cut and paste items from within one application, not across
-# applications or processes.
-#
-# I've written a number of Python text filters I like to run on the contents of
-# the clipboard so I need to call the Windows clipboard API with global memory
-# for my filters to work properly.
-#
-# Here's some sample code solving this problem using ctypes.
-#
-# This is my first work with ctypes.  It's powerful stuff, but passing arguments
-# in and out of functions is tricky.  More sample code would have been helpful,
-# hence this contribution.
-#
-###################################################################################
 from __future__ import print_function, unicode_literals, absolute_import
 
 import ctypes
-import ctypes.wintypes as wintypes
-from ctypes import *
+from ctypes import wintypes, sizeof, c_char_p, c_int, c_size_t, cast
+from ctypes import windll, addressof, create_unicode_buffer, c_void_p, c_wchar_p
+from ctypes import c_buffer, wstring_at
 from pyreadline.keysyms.winconstants import CF_UNICODETEXT, GHND
 from pyreadline.unicode_helper import ensure_unicode, ensure_str
 

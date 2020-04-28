@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+"""Cursor control and color for the Windows console.
+
+This was modeled after the C extension of the same name by Fredrik Lundh.
+"""
+
 # *****************************************************************************
 #       Copyright (C) 2003-2006 Gary Bishop.
 #       Copyright (C) 2006  Jorgen Stenarson. <jorgen.stenarson@bostream.nu>
@@ -8,44 +13,38 @@
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
 
-"""Cursor control and color for the Windows console.
-
-This was modeled after the C extension of the same name by Fredrik Lundh. 
-"""
-
-# primitive debug printing that won't interfere with the screen
-
-from .event import Event
-import sys
 import os
-import traceback
 import re
+import sys
+import traceback
 
-import pyreadline.unicode_helper as unicode_helper
-
+# from pyreadline import unicode_helper
 from pyreadline.logger import log
 from pyreadline.unicode_helper import ensure_unicode, ensure_str
 from pyreadline.keysyms import make_KeyPress, KeyPress
 from pyreadline.console.ansi import AnsiState, AnsiWriter
+from pyreadline.console.event import Event
 
 try:
     import ctypes.util
+    from ctypes import c_short, c_int, c_byte, byref, Structure, Union, addressof
+    from ctypes import c_char_p, cast, c_void_p, windll, c_wchar_p, c_char, c_wchar
+    from ctypes import c_size_t
     from ctypes import *
     from _ctypes import call_function
+    from ctypes.wintypes import BOOL, HANDLE, DWORD
     from ctypes.wintypes import *
 except ImportError:
-    raise ImportError("You need ctypes to run this code")
+    raise
 
 if sys.version_info < (2, 6):
     bytes = str
 
 
-def nolog(string):
-    pass
+# def nolog(string):
+#     pass
 
-
-log = nolog
-
+# log = nolog
 
 # some constants we need
 STD_INPUT_HANDLE = -10
@@ -195,13 +194,11 @@ key_modifiers = {
 
 
 def split_block(text, size=1000):
-    return [text[start : start + size] for start in range(0, len(text), size)]
+    return [text[start: start + size] for start in range(0, len(text), size)]
 
 
 class Console(object):
-    """Console driver for Windows.
-
-    """
+    """Console driver for Windows."""
 
     def __init__(self, newbuffer=0):
         """Initialize the Console object.
@@ -272,7 +269,7 @@ class Console(object):
         return top, bot
 
     def fixcoord(self, x, y):
-        """Return a long with x and y packed inside, 
+        """Return a long with x and y packed inside,
         also handle negative x and y."""
         if x < 0 or y < 0:
             info = CONSOLE_SCREEN_BUFFER_INFO()
@@ -398,7 +395,7 @@ class Console(object):
         return n
 
     def write_plain(self, text, attr=None):
-        """write text at current cursor position."""
+        """Write text at current cursor position."""
         text = ensure_unicode(text)
         log('write("%s", %s)' % (text, attr))
         if attr is None:
@@ -471,7 +468,8 @@ class Console(object):
 
         pos = self.fixcoord(x, y)
         n = DWORD(0)
-        self.WriteConsoleOutputCharacterW(self.hout, text, len(text), pos, byref(n))
+        self.WriteConsoleOutputCharacterW(
+            self.hout, text, len(text), pos, byref(n))
         self.FillConsoleOutputAttribute(self.hout, attr, n, pos, byref(n))
 
     def clear_to_end_of_window(self):
@@ -490,7 +488,8 @@ class Console(object):
             attr = self.attr
         for y in range(y0, y1):
             pos = self.fixcoord(x0, y)
-            self.FillConsoleOutputAttribute(self.hout, attr, x1 - x0, pos, byref(n))
+            self.FillConsoleOutputAttribute(
+                self.hout, attr, x1 - x0, pos, byref(n))
             self.FillConsoleOutputCharacterW(
                 self.hout, ord(fill[0]), x1 - x0, pos, byref(n)
             )
@@ -545,7 +544,8 @@ class Console(object):
         while 1:
             if inputHookFunc:
                 call_function(inputHookFunc, ())
-            status = self.ReadConsoleInputW(self.hin, byref(Cevent), 1, byref(count))
+            status = self.ReadConsoleInputW(
+                self.hin, byref(Cevent), 1, byref(count))
             if status and count.value == 1:
                 e = event(self, Cevent)
                 return e
@@ -574,7 +574,8 @@ class Console(object):
         Cevent = INPUT_RECORD()
         count = DWORD(0)
         while 1:
-            status = self.ReadConsoleInputW(self.hin, byref(Cevent), 1, byref(count))
+            status = self.ReadConsoleInputW(
+                self.hin, byref(Cevent), 1, byref(count))
             if (
                 status
                 and (count.value == 1)
@@ -590,7 +591,8 @@ class Console(object):
         """Check event queue."""
         Cevent = INPUT_RECORD()
         count = DWORD(0)
-        status = self.PeekConsoleInputW(self.hin, byref(Cevent), 1, byref(count))
+        status = self.PeekConsoleInputW(
+            self.hin, byref(Cevent), 1, byref(count))
         if status and count == 1:
             return event(self, Cevent)
 
@@ -617,7 +619,8 @@ class Console(object):
             width = max(width, wmin)
             height = max(height, hmin)
             # print width, height
-            self.SetConsoleScreenBufferSize(self.hout, self.fixcoord(width, height))
+            self.SetConsoleScreenBufferSize(
+                self.hout, self.fixcoord(width, height))
         else:
             return (info.dwSize.X, info.dwSize.Y)
 
@@ -825,32 +828,15 @@ class event(Event):
             self.state = input.Event.MenuEvent.dwCommandId
 
 
-def getconsole(buffer=1):
+def getconsole(buf=1):
     """Get a console handle.
 
-        If buffer is non-zero, a new console buffer is allocated and
-        installed.  Otherwise, this returns a handle to the current
-        console buffer"""
+    If buffer is non-zero, a new console buffer is allocated and
+    installed.  Otherwise, this returns a handle to the current
+    console buffer.
+    """
+    return Console(buf)
 
-    c = Console(buffer)
-
-    return c
-
-
-# The following code uses ctypes to allow a Python callable to
-# substitute for GNU readline within the Python interpreter. Calling
-# raw_input or other functions that do input, inside your callable
-# might be a bad idea, then again, it might work.
-
-# The Python callable can raise EOFError or KeyboardInterrupt and
-# these will be translated into the appropriate outputs from readline
-# so that they will then be translated back!
-
-# If the Python callable raises any other exception, a traceback will
-# be printed and readline will appear to return an empty line.
-
-# I use ctypes to create a C-callable from a Python wrapper that
-# handles the exceptions and gets the result into the right form.
 
 # the type for our C-callable wrapper
 HOOKFUNC23 = CFUNCTYPE(c_char_p, c_void_p, c_void_p, c_char_p)
@@ -860,7 +846,24 @@ readline_ref = None  # reference to the c-callable to keep it alive
 
 
 def hook_wrapper_23(stdin, stdout, prompt):
-    """Wrap a Python readline so it behaves like GNU readline."""
+    """Wrap a Python readline so it behaves like GNU readline.
+
+    The following code uses ctypes to allow a Python callable to
+    substitute for GNU readline within the Python interpreter. Calling
+    raw_input or other functions that do input, inside your callable
+    might be a bad idea, then again, it might work.
+
+    The Python callable can raise EOFError or KeyboardInterrupt and
+    these will be translated into the appropriate outputs from readline
+    so that they will then be translated back!
+
+    If the Python callable raises any other exception, a traceback will
+    be printed and readline will appear to return an empty line.
+
+    I use ctypes to create a C-callable from a Python wrapper that
+    handles the exceptions and gets the result into the right form.
+
+    """
     try:
         # call the Python hook
         res = ensure_str(readline_hook(prompt))
@@ -885,7 +888,7 @@ def hook_wrapper_23(stdin, stdout, prompt):
 
 
 def install_readline(hook):
-    """Set up things for the interpreter to call 
+    """Set up things for the interpreter to call
     our function like GNU readline."""
     global readline_hook, readline_ref
     # save the hook so the wrapper can call it
@@ -905,8 +908,6 @@ def install_readline(hook):
 
 
 if __name__ == "__main__":
-    import time
-    import sys
 
     def p(char):
         return chr(VkKeyScan(ord(char)) & 0xFF)

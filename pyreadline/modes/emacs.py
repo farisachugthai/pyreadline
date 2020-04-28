@@ -111,7 +111,8 @@ class IncrementalSearchPromptMode(object):
         else:
             self.subsearch_prompt = "forward-i-search%d`%s': "
 
-        self.prompt = self.subsearch_prompt % (self._history.history_cursor, "")
+        self.prompt = self.subsearch_prompt % (
+            self._history.history_cursor, "")
 
         if self.subsearch_query:
             self.line = self._process_incremental_search_keyevent(init_event)
@@ -701,8 +702,10 @@ class EmacsMode(
         self._bind_key("Control-Left", self.backward_word)
         self._bind_key("Shift-Right", self.forward_char_extend_selection)
         self._bind_key("Shift-Left", self.backward_char_extend_selection)
-        self._bind_key("Shift-Control-Right", self.forward_word_end_extend_selection)
-        self._bind_key("Shift-Control-Left", self.backward_word_extend_selection)
+        self._bind_key("Shift-Control-Right",
+                       self.forward_word_end_extend_selection)
+        self._bind_key("Shift-Control-Left",
+                       self.backward_word_extend_selection)
         self._bind_key("Shift-Home", self.beginning_of_line_extend_selection)
         self._bind_key("Shift-End", self.end_of_line_extend_selection)
         self._bind_key("numpad0", self.self_insert)

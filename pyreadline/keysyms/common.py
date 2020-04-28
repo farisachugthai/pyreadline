@@ -100,7 +100,8 @@ validkey = set(
     ]
 )
 
-escape_sequence_to_special_key = {"\\e[a": "up", "\\e[b": "down", "del": "delete"}
+escape_sequence_to_special_key = {
+    "\\e[a": "up", "\\e[b": "down", "del": "delete"}
 
 
 class KeyPress(object):

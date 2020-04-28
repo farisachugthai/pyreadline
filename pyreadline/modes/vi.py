@@ -237,7 +237,7 @@ class ViMode(basemode.BaseMode):
 
     def vi_save_line(self):
         if self._vi_undo_stack and self._vi_undo_cursor >= 0:
-            del self._vi_undo_stack[self._vi_undo_cursor + 1 :]
+            del self._vi_undo_stack[self._vi_undo_cursor + 1:]
         # tpl_undo = (self.l_buffer.point, self.l_buffer[:], )
         tpl_undo = (
             self.l_buffer.point,
@@ -490,7 +490,8 @@ class ViCommand:
         self.readline.vi_save_line()
         times = self.get_multiplier()
         cursor = self.readline.l_buffer.point
-        self.readline.l_buffer.line_buffer[cursor : cursor + times] = char * times
+        self.readline.l_buffer.line_buffer[cursor: cursor +
+                                           times] = char * times
         if times > 1:
             self.readline.l_buffer.point += times - 1
         self.end()
@@ -658,7 +659,7 @@ class ViCommand:
         if completions:
             text = " ".join(completions) + " "
             self.readline.l_buffer.line_buffer[
-                self.readline.begidx : self.readline.endidx + 1
+                self.readline.begidx: self.readline.endidx + 1
             ] = list(text)
             prefix_len = self.readline.endidx - self.readline.begidx
             self.readline.l_buffer.point += len(text) - prefix_len
@@ -788,7 +789,7 @@ class ViCommand:
     def key_C(self, char):
         self.is_edit = True
         self.readline.vi_set_insert_mode(True)
-        del self.readline.l_buffer.line_buffer[self.readline.l_buffer.point :]
+        del self.readline.l_buffer.line_buffer[self.readline.l_buffer.point:]
         self.state = _VI_TEXT
 
     def key_r(self, char):
@@ -970,17 +971,18 @@ class ViCommand:
         if self.pos_motion <= len(self.readline.l_buffer.line_buffer):
             self.readline.l_buffer.point = self.pos_motion
         else:
-            self.readline.l_buffer.point = len(self.readline.l_buffer.line_buffer) - 1
+            self.readline.l_buffer.point = len(
+                self.readline.l_buffer.line_buffer) - 1
 
     def yank(self):
         if self.pos_motion > self.readline.l_buffer.point:
             s = self.readline.l_buffer.line_buffer[
-                self.readline.l_buffer.point : self.pos_motion + self.delete_right
+                self.readline.l_buffer.point: self.pos_motion + self.delete_right
             ]
         else:
             index = max(0, self.pos_motion - self.delete_left)
             s = self.readline.l_buffer.line_buffer[
-                index : self.readline.l_buffer.point + self.delete_right
+                index: self.readline.l_buffer.point + self.delete_right
             ]
         self.readline._vi_yank_buffer = s
 
@@ -993,14 +995,15 @@ class ViCommand:
         #         return
         if self.pos_motion > self.readline.l_buffer.point:
             del self.readline.l_buffer.line_buffer[
-                self.readline.l_buffer.point : self.pos_motion + self.delete_right
+                self.readline.l_buffer.point: self.pos_motion + self.delete_right
             ]
             if self.readline.l_buffer.point > len(self.readline.l_buffer.line_buffer):
-                self.readline.l_buffer.point = len(self.readline.l_buffer.line_buffer)
+                self.readline.l_buffer.point = len(
+                    self.readline.l_buffer.line_buffer)
         else:
             index = max(0, self.pos_motion - self.delete_left)
             del self.readline.l_buffer.line_buffer[
-                index : self.readline.l_buffer.point + self.delete_right
+                index: self.readline.l_buffer.point + self.delete_right
             ]
             self.readline.l_buffer.point = index
 

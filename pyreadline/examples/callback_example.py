@@ -48,7 +48,8 @@ def lineReceived(line):
         readline.callback_handler_remove()
     else:
         readline.callback_handler_install(
-            "Got %s of %s, more typing please:" % (count, maxlines) + os.linesep,
+            "Got %s of %s, more typing please:" % (
+                count, maxlines) + os.linesep,
             lineReceived,
         )
 
