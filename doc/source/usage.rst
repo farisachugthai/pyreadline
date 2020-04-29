@@ -6,6 +6,50 @@ The purpose of readline is to improve the interactive experience with the
 python interpreter by improving the line editing facilities. The most important
 being tab completion and copy and paste.
 
+Configuration files
+===================
+
+Things to Keep in Mind
+-----------------------
+
+There are a few things that are not automatically installed.
+
+*  Copy ``pyreadlineconfig.ini`` from
+   :file:`../../pyreadline/configuration/pyreadlineconfig.ini`
+   to your `HOME` directory (usually ``C:/Documents and Settings/YOURNAME``
+   or ``C:\Users\Username``).
+
+   * Alternatively, one can define the HOME environment variable as so.
+
+.. envvar:: HOMEDRIVE
+
+   Conventionally set to the C: drive.
+
+.. envvar:: HOMEPATH
+
+   The path from the root of the C: drive to the user's home directory.
+
+As such one can define home as the concatenation of `HOMEDRIVE` and `HOMEPATH`.
+
+.. envvar:: HOME
+
+   The user's home directory.
+
+
+Optional Startup Code
+---------------------
+
+If one defines `PYTHONSTARTUP`, add the code in
+:file:`../../pyreadline/configuration/startup.py`
+
+Any code in a file pointed to by PYTHONSTARTUP is automatically executed
+when the interpreter detects that it's being run in interactive mode.
+
+However, readline is automatically imported by the `site` module which is
+enabled by default. As a result, this environment variable doesn't need
+to be defined.
+
+
 pyreadline with IronPython
 --------------------------
 
@@ -20,30 +64,6 @@ source code to make PythonCommandLine a public class that we can override.
 
 * Copy rlcompleter.py from a standard python install to your ironpython path
   (this file is not included with fepy).
-
-
-Clipboard
----------
-
-Pyreadline can do copy/paste using the clipboard. Selections can be done using
-shift and arrowkeys as in most windows programs.
-
-There are three different paste functions that can be bound.
-
-
-    paste
-      Paste windows clipboard. Assume single line strip other lines and end of
-      line markers and trailing spaces
-
-    paste_mulitline_code
-      Paste windows clipboard as multiline code. Removes any empty lines in the
-      code
-
-    ipython_paste
-      Paste windows clipboard. If enable_ipython_paste_list_of_lists is True
-      then try to convert tabseparated data to repr of list of lists or repr of
-      array. If enable_ipython_paste_for_paths==True then change \\\\ to / and
-      spaces to \\space.
 
 
 International characters
@@ -70,7 +90,36 @@ in the case of a Swedish system that would be e.g. ``Lucida Console``, or
 Example of a Configuration File
 ===============================
 
+.. currentmodule:: pyreadline.configuration.pyreadlineconfig
+
 Here is the example config file shipped with pyreadline:
 
 .. literalinclude:: ../../pyreadline/configuration/pyreadlineconfig.ini
 
+
+Example with Callbacks
+----------------------
+
+.. include:: ../../pyreadline/examples/callback_example.py
+   :code: python
+
+
+Example with Tk
+----------------------
+
+.. include:: ../../pyreadline/examples/tk_gui.py
+   :code: python
+
+
+API for Config File
+-------------------
+
+.. automodule:: pyreadline.configuration
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: pyreadline.configuration.startup
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -57,7 +57,7 @@ a python syntax is used instead. The available commands are:
 
     history_length
       Set max length of history file default 200
-      
+
 
 .. For now you have to look in the sourcecode. Check the readline class of the file rlmain.py
    Let's add them! Btw bindable isn't a word.
@@ -99,7 +99,7 @@ Methods as defined by the ReadLineTextBuffer
    .. method:: backward_word_end(argument=1)
 
    .. method:: beginning_of_line_extend_selection()
-    
+
    .. method:: end_of_line_extend_selection()
 
    .. method:: forward_char_extend_selection(argument=1)
@@ -132,11 +132,28 @@ Methods as defined by the ReadLineTextBuffer
 
    .. method:: downcase_word()
 
-History
-========
+
+.. _history-api:
+
+History --- Rerunning previously entered commands
+=================================================
 
 .. automodule:: pyreadline.lineeditor.history
    :members:
    :undoc-members:
    :show-inheritance:
 
+
+LineEditor
+===========
+
+.. automodule:: pyreadline.lineeditor
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+.. automodule:: pyreadline.lineeditor.wordmatcher
+   :members:
+   :undoc-members:
+   :show-inheritance:

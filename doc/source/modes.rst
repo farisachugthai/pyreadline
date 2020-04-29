@@ -40,8 +40,8 @@ Vi
    :show-inheritance:
 
 
-``NotEmacs``
--------------
+NotEmacs
+--------
 
 .. automodule:: pyreadline.modes.notemacs
    :members:

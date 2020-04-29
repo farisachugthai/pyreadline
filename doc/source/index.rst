@@ -5,26 +5,28 @@
 Welcome to pyreadline's documentation!
 ======================================
 
+.. include:: ../../README.rst
+
 Contents:
 
 .. toctree::
    :caption: Table of Contents
    :maxdepth: 2
 
-   introduction
-   installation
    usage
    bindable_commands
    modes
+   clipboard
+   console
+   api
    known_issues
    changelog
 
 
-   
+
 Indices and tables
 ==================
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
