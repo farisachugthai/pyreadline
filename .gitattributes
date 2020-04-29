@@ -1,0 +1,34 @@
+# Git Attributes
+
+# Line endings
+* eol=lf
+text=auto diff
+
+# File type specific line endings
+
+*.txt		text whitespace=trailing-space,space-before-tab
+*.rst		text whitespace=trailing-space,space-before-tab,tab-in-indent
+*.html text
+
+# File type diffs
+
+*.py		text diff=python whitespace=trailing-space,space-before-tab,tab-in-indent
+*.html      diff=html
+
+###############################################################################
+# behavior for image files
+#
+# image files are treated as binary by default.
+###############################################################################
+doc/_images/* binary
+*.png binary
+*.doctree   binary
+*.pickle    binary
+*.ttf binary
+*.svg binary
+*.pdf binary
+*.jp[e]?g binary
+#*.gif   binary
+
+*.{cmd,[cC][mM][dD]} text eol=crlf
+*.{bat,[bB][aA][tT]} text eol=crlf
