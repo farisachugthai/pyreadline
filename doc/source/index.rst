@@ -5,6 +5,8 @@
 Welcome to pyreadline's documentation!
 ======================================
 
+.. highlight:: python
+
 .. include:: ../../README.rst
 
 Contents:
@@ -15,10 +17,12 @@ Contents:
 
    usage
    bindable_commands
+   api
    modes
    clipboard
    console
-   api
+   vi
+   development
    known_issues
    changelog
 

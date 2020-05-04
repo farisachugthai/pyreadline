@@ -2,12 +2,57 @@
 Usage
 =====
 
+.. currentmodule:: pyreadline.configuration.pyreadlineconfig
+
 The purpose of readline is to improve the interactive experience with the
 python interpreter by improving the line editing facilities. The most important
 being tab completion and copy and paste.
 
 Configuration files
 ===================
+
+Examples of Configuration Files
+================================
+
+Here is the example config file shipped with pyreadline:
+
+.. literalinclude:: ../../pyreadline/configuration/pyreadlineconfig.ini
+
+
+Example with Callbacks
+----------------------
+
+.. include:: ../../pyreadline/examples/callback_example.py
+   :code: python
+
+
+Example with Tk
+----------------------
+
+.. include:: ../../pyreadline/examples/tk_gui.py
+   :code: python
+
+
+API for Config File
+===================
+
+.. automodule:: pyreadline.configuration
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+.. automodule:: pyreadline.configuration.startup
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Valid Keys --- Mappings chars to the physical keys.
+===================================================
+
+pyreadline considers any key in the following set to be valid.
+
 
 Things to Keep in Mind
 -----------------------
@@ -42,7 +87,7 @@ Optional Startup Code
 If one defines `PYTHONSTARTUP`, add the code in
 :file:`../../pyreadline/configuration/startup.py`
 
-Any code in a file pointed to by PYTHONSTARTUP is automatically executed
+Any code in a file pointed to by `PYTHONSTARTUP` is automatically executed
 when the interpreter detects that it's being run in interactive mode.
 
 However, readline is automatically imported by the `site` module which is
@@ -57,12 +102,12 @@ pyreadline with IronPython
 
 Pyreadline can be used together with IronPython. Unfortunately the binary
 installs of IronPython can not run pyreadline directly. You need to patch the
-source code to make PythonCommandLine a public class that we can override.
+source code to make ``PythonCommandLine`` a public class that we can override.
 
-* In PythonCommandLine.cs you need to change class PythonCommandLine to public
-  class PythonCommandLine and recompile.
+* In ``PythonCommandLine.cs`` you need to change class ``PythonCommandLine`` to public
+  class ``PythonCommandLine`` and recompile.
 
-* Copy rlcompleter.py from a standard python install to your ironpython path
+* Copy rlcompleter.py from a standard python install to your IronPython path
   (this file is not included with fepy).
 
 
@@ -85,41 +130,3 @@ command. For Swedish systems :command:`chcp 1252` does the trick but you also
 have to change the terminal font to a font compatible with the wanted code page
 in the case of a Swedish system that would be e.g. ``Lucida Console``, or
 ``Consolas`` using the properties dialog for the console.
-
-
-Example of a Configuration File
-===============================
-
-.. currentmodule:: pyreadline.configuration.pyreadlineconfig
-
-Here is the example config file shipped with pyreadline:
-
-.. literalinclude:: ../../pyreadline/configuration/pyreadlineconfig.ini
-
-
-Example with Callbacks
-----------------------
-
-.. include:: ../../pyreadline/examples/callback_example.py
-   :code: python
-
-
-Example with Tk
-----------------------
-
-.. include:: ../../pyreadline/examples/tk_gui.py
-   :code: python
-
-
-API for Config File
--------------------
-
-.. automodule:: pyreadline.configuration
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-.. automodule:: pyreadline.configuration.startup
-   :members:
-   :undoc-members:
-   :show-inheritance:

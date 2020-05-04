@@ -12,8 +12,13 @@ Configuration file
 
 The configuration file is read from the users home directory and is named
 pyreadlineconfig.ini. The files syntax is not the same as for GNU readline but
-a python syntax is used instead. The available commands are:
+a python syntax is used instead.
 
+It is going to be relevant for both general use and security intensive
+purposes to reiterate that the configuration file is `exec`\'ed, as this
+may come as a surprise to users of more traditionally handled ``*.ini`` files.
+
+A subsection of the available commands are:
 
     bind_exit_key
       is used to bind the keys that are used to exit the interpreter. (Ctrl-d,
