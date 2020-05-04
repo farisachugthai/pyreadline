@@ -10,3 +10,6 @@ MANIFEST
 **tags**
 docs/build
 .*venv*
+.vs
+.vscode
+.idea

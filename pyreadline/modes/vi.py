@@ -6,16 +6,16 @@ Vi input states
 
 Sequence of possible states are in the order below.:
 
-_VI_BEGIN = "vi_begin"
-_VI_MULTI1 = "vi_multi1"
-_VI_ACTION = "vi_action"
-_VI_MULTI2 = "vi_multi2"
-_VI_MOTION = "vi_motion"
-_VI_MOTION_ARGUMENT = "vi_motion_argument"
-_VI_REPLACE_ONE = "vi_replace_one"
-_VI_TEXT = "vi_text"
-_VI_SEARCH = "vi_search"
-_VI_END = "vi_end"
+    _VI_BEGIN = "vi_begin"
+    _VI_MULTI1 = "vi_multi1"
+    _VI_ACTION = "vi_action"
+    _VI_MULTI2 = "vi_multi2"
+    _VI_MOTION = "vi_motion"
+    _VI_MOTION_ARGUMENT = "vi_motion_argument"
+    _VI_REPLACE_ONE = "vi_replace_one"
+    _VI_TEXT = "vi_text"
+    _VI_SEARCH = "vi_search"
+    _VI_END = "vi_end"
 
 """
 # *****************************************************************************
@@ -27,14 +27,18 @@ _VI_END = "vi_end"
 #  the file COPYING, distributed as part of this software.
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
-import os
 
-# import pyreadline.logger as logger
+import io
+import os
+import shlex
+import subprocess
+import tempfile
+
 from pyreadline.logger import log
 from pyreadline.lineeditor import lineobj
 
 # from pyreadline.lineeditor import history
-from pyreadline.modes import basemode
+from pyreadline.modes.basemode import BaseMode
 
 
 # Globals:
@@ -63,19 +67,37 @@ _vi_dct_matching = {
 }
 
 
-class ViMode(basemode.BaseMode):
+class ViMode(BaseMode):
     mode = "vi"
 
-    def __init__(self, rlobj):
-        super(ViMode, self).__init__(rlobj)
+    def __init__(self, rlobj, **kwargs):
+        super(ViMode, self).__init__(rlobj, **kwargs)
+        self.show_all_if_ambiguous = "on"
+        self.key_dispatch = {}
+        self.__vi_insert_mode = None
+        self._vi_command = None
+        self._vi_command_edit = None
+        self._vi_key_find_char = None
+        self._vi_key_find_direction = True
+        self._vi_yank_buffer = None
+        self._vi_multiplier1 = ""
+        self._vi_multiplier2 = ""
+        self._vi_undo_stack = []
+        self._vi_undo_cursor = -1
+        self._vi_current = None
+        self._vi_search_text = ""
+        self._vi_search_position = 0
+        self.vi_save_line()
+        self.vi_set_insert_mode(True)
         self.__vi_insert_mode = None
 
     def __repr__(self):
         return "<ViMode>"
 
+    def nop(self, *args):
+        pass
+
     def process_keyevent(self, keyinfo):
-        def nop(e):
-            pass
 
         keytuple = keyinfo.tuple()
 
@@ -108,27 +130,31 @@ class ViMode(basemode.BaseMode):
         is called in enough places in the repo that we need to keep
         the interface consistent even if we ignore the 'args'.
         """
-        self.show_all_if_ambiguous = "on"
-        self.key_dispatch = {}
-        self.__vi_insert_mode = None
-        self._vi_command = None
-        self._vi_command_edit = None
-        self._vi_key_find_char = None
-        self._vi_key_find_direction = True
-        self._vi_yank_buffer = None
-        self._vi_multiplier1 = ""
-        self._vi_multiplier2 = ""
-        self._vi_undo_stack = []
-        self._vi_undo_cursor = -1
-        self._vi_current = None
-        self._vi_search_text = ""
-        self._vi_search_position = 0
-        self.vi_save_line()
-        self.vi_set_insert_mode(True)
         # make ' ' to ~ self insert
         for c in range(ord(" "), 127):
             self._bind_key("%s" % chr(c), self.vi_key)
-        self._bind_key("BackSpace", self.vi_backspace)
+
+        # I often accidentally hold the shift or control while typing space
+        self._bind_key("space", self.self_insert)
+        self._bind_key("Shift-space", self.self_insert)
+        self._bind_key("Left", self.backward_char)
+        self._bind_key("Control-b", self.backward_char)
+        self._bind_key("Right", self.forward_char)
+        self._bind_key("Control-f", self.forward_char)
+        self._bind_key("Control-h", self.backward_delete_char)
+        self._bind_key("BackSpace", self.backward_delete_char)
+        self._bind_key("Control-BackSpace", self.backward_delete_word)
+
+        self._bind_key("Delete", self.delete_char)
+        self._bind_key("Clear", self.clear_screen)
+        self._bind_key("Alt-f", self.forward_word)
+        self._bind_key("Alt-b", self.backward_word)
+        self._bind_key("Control-l", self.clear_screen)
+        self._bind_key("Control-a", self.beginning_of_line)
+        self._bind_key("Control-e", self.end_of_line)
+        # Why don't we have these?
+        # self._bind_key("Alt-p", self.non_incremental_reverse_search_history)
+        # self._bind_key("Alt-n", self.non_incremental_forward_search_history)
         self._bind_key("Escape", self.vi_escape)
         self._bind_key("Return", self.vi_accept_line)
 
@@ -136,16 +162,54 @@ class ViMode(basemode.BaseMode):
         self._bind_key("Right", self.forward_char)
         self._bind_key("Home", self.beginning_of_line)
         self._bind_key("End", self.end_of_line)
-        self._bind_key("Delete", self.delete_char)
+        self._bind_key("Delete", self.vi_backspace)
+        self._bind_key("BackSpace", self.vi_backspace)
 
         self._bind_key("Control-d", self.vi_eof)
         self._bind_key("Control-z", self.vi_eof)
+        self._bind_key("Control-_", self.vi_undo)
+        self._bind_key("Control-.", self.vi_undo)
         self._bind_key("Control-r", self.vi_redo)
+
+        # not previous history!!!
         self._bind_key("Up", self.vi_arrow_up)
         self._bind_key("Control-p", self.vi_up)
         self._bind_key("Down", self.vi_arrow_down)
         self._bind_key("Control-n", self.vi_down)
+
         self._bind_key("Tab", self.vi_complete)
+        self._bind_key("Control-Space", self.vi_complete)
+
+        self._bind_key("Control-Right", self.forward_word_end)
+        self._bind_key("Control-Left", self.backward_word)
+        self._bind_key("Shift-Right", self.forward_char_extend_selection)
+        self._bind_key("Shift-Left", self.backward_char_extend_selection)
+        self._bind_key("Shift-Control-Right", self.forward_word_end_extend_selection)
+        self._bind_key("Shift-Control-Left", self.backward_word_extend_selection)
+        self._bind_key("Shift-Home", self.beginning_of_line_extend_selection)
+        self._bind_key("Shift-End", self.end_of_line_extend_selection)
+
+        self._bind_key("numpad0", self.self_insert)
+        self._bind_key("numpad1", self.self_insert)
+        self._bind_key("numpad2", self.self_insert)
+        self._bind_key("numpad3", self.self_insert)
+        self._bind_key("numpad4", self.self_insert)
+        self._bind_key("numpad5", self.self_insert)
+        self._bind_key("numpad6", self.self_insert)
+        self._bind_key("numpad7", self.self_insert)
+        self._bind_key("numpad8", self.self_insert)
+        self._bind_key("numpad9", self.self_insert)
+        self._bind_key("add", self.self_insert)
+        self._bind_key("subtract", self.self_insert)
+        self._bind_key("multiply", self.self_insert)
+        self._bind_key("divide", self.self_insert)
+        self._bind_key("vk_decimal", self.self_insert)
+
+        # or this one?
+        # self._bind_key('Control-shift-k',  self.kill_whole_line)
+        # self._bind_key('Control-Shift-v',   self.quoted_insert)
+        # self._bind_key("Meta-d", self.kill_word)
+        # self._bind_key("Control-Delete", self.forward_delete_word)
 
     #        self._bind_key('Control-e', self.emacs)
 
@@ -185,7 +249,7 @@ class ViMode(basemode.BaseMode):
         else:
             self._vi_do_backspace(self._vi_command)
 
-    def _vi_do_backspace(self, vi_cmd):
+    def _vi_do_backspace(self, i_cmd):
         if self.vi_is_insert_mode or (self._vi_command and self._vi_command.is_search):
             if self.l_buffer.point > 0:
                 self.l_buffer.point -= 1
@@ -227,6 +291,8 @@ class ViMode(basemode.BaseMode):
         else:
             self.cursor_size = 100
 
+    # The Undos: {{{
+
     def vi_undo_restart(self):
         tpl_undo = (
             self.l_buffer.point,
@@ -237,7 +303,7 @@ class ViMode(basemode.BaseMode):
 
     def vi_save_line(self):
         if self._vi_undo_stack and self._vi_undo_cursor >= 0:
-            del self._vi_undo_stack[self._vi_undo_cursor + 1:]
+            del self._vi_undo_stack[self._vi_undo_cursor + 1 :]
         # tpl_undo = (self.l_buffer.point, self.l_buffer[:], )
         tpl_undo = (
             self.l_buffer.point,
@@ -282,6 +348,8 @@ class ViMode(basemode.BaseMode):
         self._vi_undo_cursor += 1
         self.vi_undo_assign()
 
+    # }}}
+
     def vi_search(self, rng):
         for i in rng:
             line_history = self._history.history[i]
@@ -295,6 +363,9 @@ class ViMode(basemode.BaseMode):
                 return True
         self._bell()
         return False
+
+    def _bell(self):
+        print("Some douche thought you needed a bell.")
 
     def vi_search_first(self):
         text = "".join(self.l_buffer.line_buffer[1:])
@@ -490,8 +561,7 @@ class ViCommand:
         self.readline.vi_save_line()
         times = self.get_multiplier()
         cursor = self.readline.l_buffer.point
-        self.readline.l_buffer.line_buffer[cursor: cursor +
-                                           times] = char * times
+        self.readline.l_buffer.line_buffer[cursor : cursor + times] = char * times
         if times > 1:
             self.readline.l_buffer.point += times - 1
         self.end()
@@ -659,7 +729,7 @@ class ViCommand:
         if completions:
             text = " ".join(completions) + " "
             self.readline.l_buffer.line_buffer[
-                self.readline.begidx: self.readline.endidx + 1
+                self.readline.begidx : self.readline.endidx + 1
             ] = list(text)
             prefix_len = self.readline.endidx - self.readline.begidx
             self.readline.l_buffer.point += len(text) - prefix_len
@@ -710,10 +780,10 @@ class ViCommand:
         else:
             self.key_h(char)
         self.readline._vi_do_backspace(self)
-        if self.state == _VI_SEARCH and not (self.readline.l_buffer.line_buffer):
+        if self.state == _VI_SEARCH and not self.readline.l_buffer.line_buffer:
             self.state = _VI_BEGIN
 
-    def key_l(self, char):
+    def key_l(self, *args):
         self.motion = self.motion_right
         self.state = _VI_MOTION
         self.apply()
@@ -789,7 +859,7 @@ class ViCommand:
     def key_C(self, char):
         self.is_edit = True
         self.readline.vi_set_insert_mode(True)
-        del self.readline.l_buffer.line_buffer[self.readline.l_buffer.point:]
+        del self.readline.l_buffer.line_buffer[self.readline.l_buffer.point :]
         self.state = _VI_TEXT
 
     def key_r(self, char):
@@ -971,18 +1041,17 @@ class ViCommand:
         if self.pos_motion <= len(self.readline.l_buffer.line_buffer):
             self.readline.l_buffer.point = self.pos_motion
         else:
-            self.readline.l_buffer.point = len(
-                self.readline.l_buffer.line_buffer) - 1
+            self.readline.l_buffer.point = len(self.readline.l_buffer.line_buffer) - 1
 
     def yank(self):
         if self.pos_motion > self.readline.l_buffer.point:
             s = self.readline.l_buffer.line_buffer[
-                self.readline.l_buffer.point: self.pos_motion + self.delete_right
+                self.readline.l_buffer.point : self.pos_motion + self.delete_right
             ]
         else:
             index = max(0, self.pos_motion - self.delete_left)
             s = self.readline.l_buffer.line_buffer[
-                index: self.readline.l_buffer.point + self.delete_right
+                index : self.readline.l_buffer.point + self.delete_right
             ]
         self.readline._vi_yank_buffer = s
 
@@ -995,15 +1064,14 @@ class ViCommand:
         #         return
         if self.pos_motion > self.readline.l_buffer.point:
             del self.readline.l_buffer.line_buffer[
-                self.readline.l_buffer.point: self.pos_motion + self.delete_right
+                self.readline.l_buffer.point : self.pos_motion + self.delete_right
             ]
             if self.readline.l_buffer.point > len(self.readline.l_buffer.line_buffer):
-                self.readline.l_buffer.point = len(
-                    self.readline.l_buffer.line_buffer)
+                self.readline.l_buffer.point = len(self.readline.l_buffer.line_buffer)
         else:
             index = max(0, self.pos_motion - self.delete_left)
             del self.readline.l_buffer.line_buffer[
-                index: self.readline.l_buffer.point + self.delete_right
+                index : self.readline.l_buffer.point + self.delete_right
             ]
             self.readline.l_buffer.point = index
 
@@ -1057,43 +1125,69 @@ class ViCommand:
             )
 
 
-class ViExternalEditor:
-    def __init__(self, line):
-        if type(line) is type([]):
-            line = "".join(line)
+class ViExternalEditor(object):
+# (subprocess.Popen):
+    def __init__(self, line, **kwargs):
+        self.line = shlex.split(shlex.quote(line))
+        # super(ViExternalEditor, self).__init__(**kwargs)
+        self._sio = io.StringIO()
+        # i agree it doesn't really make sense to write it this way but i'm
+        # *attempting* to maintain a backwards compatible interface
+        self.sio_write = self._sio.write
+        self.sio_read = self._sio.read
+
+    @property
+    def sio(self):
+        return self._sio
+
+    def run(self):
         file_tmp = self.get_tempfile()
         fp_tmp = self.file_open(file_tmp, "w")
-        fp_tmp.write(line)
+        # fp_tmp.write(line)
         fp_tmp.close()
         self.run_editor(file_tmp)
         fp_tmp = self.file_open(file_tmp, "r")
-        self.result = fp_tmp.read()
+        result = fp_tmp.read()
         fp_tmp.close()
         self.file_remove(file_tmp)
+        return result
 
     def get_tempfile(self):
-        import tempfile
 
         return tempfile.mktemp(prefix="readline-", suffix=".py")
 
     def file_open(self, filename, mode):
         return open(filename, mode)
 
-    def file_remove(self, filename):
+    def file_remove(self, filename: str) -> int:
+        """
+
+        Parameters
+        ----------
+        filename : str
+        """
         os.remove(filename)
 
     def get_editor(self):
+        """Breaking Change. VimExternalEditor now defaults to using Vim.
+
+        Because it feels like a safe bet that they went the extra step to install Vim.
+        """
         try:
             return os.environ["EDITOR"]
         except KeyError:
-            return "notepad"  # ouch
+            return "vim"
 
     def run_editor(self, filename):
-        cmd = "%s %s" % (self.get_editor(), filename,)
+        cmd = [("%s, %s" % (self.get_editor(), filename))]
+        cmd = shlex.split(shlex.quote(cmd))
+        cmd.insert(0, "/C")
+        cmd.insert(0, "cmd")
         self.run_command(cmd)
 
-    def run_command(self, command):
-        os.system(command)
+    def run_command(self, command: list) -> subprocess.CompletedProcess:
+        subprocess.run([command], stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE,
+                       universal_newlines=True)
 
 
 class ViEvent:
@@ -1101,7 +1195,7 @@ class ViEvent:
         self.char = char
 
 
-# vi standalone functions
+# vi standalone functions: {{{
 def vi_is_word(char):
     log("xx vi_is_word: type(%s), %s" % (type(char), char,))
     return char.isalpha() or char.isdigit() or char == "_"
@@ -1293,3 +1387,5 @@ def vi_pos_matching(line, index=0):
             index += delta
     except IndexError:
         return -1
+
+# }}}

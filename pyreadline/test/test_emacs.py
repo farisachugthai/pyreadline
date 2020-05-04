@@ -13,8 +13,15 @@ import unittest
 
 from pyreadline import logger
 from pyreadline.logger import log
-from pyreadline.test.common import keytext_to_keyinfo_and_event, MockReadline, MockConsole, Tester
-# from pyreadline.lineeditor import lineobj
+from pyreadline.test.common import (
+    keytext_to_keyinfo_and_event,
+    MockReadline,
+    MockConsole,
+    WithoutSysExit,
+)
+
+from pyreadline.lineeditor.lineobj import LineSlice
+
 # from pyreadline import keysyms
 from pyreadline.modes.emacs import EmacsMode
 
@@ -66,8 +73,7 @@ class EmacsModeTest(EmacsMode):
             lst_key = [keytext]
         for key in lst_key:
             keyinfo, event = keytext_to_keyinfo_and_event(key)
-            dispatch_func = self.key_dispatch.get(
-                keyinfo.tuple(), self.self_insert)
+            dispatch_func = self.key_dispatch.get(keyinfo.tuple(), self.self_insert)
             self.tested_commands[dispatch_func.__name__] = dispatch_func
             log("keydisp: %s %s" % (key, dispatch_func.__name__))
             dispatch_func(event)
@@ -336,7 +342,7 @@ class TestsHistory(unittest.TestCase):
         r.input("Up")
         self.assert_line(r, "ako", 3)
 
-    def test_history_3(self):
+    def test_history_4(self):
         r = EmacsModeTest()
         r.add_history("aaaa")
         r.add_history("aaba")

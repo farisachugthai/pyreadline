@@ -1,13 +1,14 @@
 # Copyright (C) 2006  Michael Graz. <mgraz@plan10.com>
 from __future__ import print_function, unicode_literals, absolute_import
 
-from pyreadline.lineeditor import lineobj
 import sys
 import unittest
 
+from pyreadline.lineeditor import lineobj
+from pyreadline.lineeditor.lineobj import TextLine, ReadLineTextBuffer
+
 sys.path.append("../..")
 # from pyreadline.modes.vi import *
-# from pyreadline import keysyms
 
 # ----------------------------------------------------------------------
 
@@ -251,6 +252,19 @@ class Test_movement(unittest.TestCase):
         for cmd, text, p in tests:
             l = lineobj.ReadLineTextBuffer(text, p)
             self.assertEqual(p, cmd(l))
+
+
+# ----------------------------------------------------------------------
+# TextLine
+
+
+class TestTextLine(unittest.TestCase):
+    def setUp(self):
+        self.buf = TextLine("test_line_editor")
+
+    def test_getting_text(self):
+        # There are way too many ways to do this
+        self.assertEqual(self.buf.get_line_text(), "test_line_editor")
 
 
 # ----------------------------------------------------------------------

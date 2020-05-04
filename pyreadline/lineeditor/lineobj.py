@@ -9,12 +9,9 @@ from __future__ import print_function, unicode_literals, absolute_import
 
 import abc
 import copy
-import re
-import operator
-import sys
+import collections
 
 from pyreadline import clipboard
-from pyreadline.logger import log
 from pyreadline.unicode_helper import ensure_unicode, biter
 from pyreadline.lineeditor import wordmatcher
 from pyreadline.error import NotAWordError
@@ -29,9 +26,16 @@ def quote_char(c):
 
 
 class LinePositioner(abc.ABC):
+    def __init__(self, line=None):
+        if line is None:
+            self.line = ""
+
     @abc.abstractmethod
     def __call__(self, line):
-        NotImplementedError("Base class !!!")
+        raise NotImplementedError("Base class !!!")
+
+    def __repr__(self):
+        return repr(self.__class__.__name__)
 
 
 class NextChar(LinePositioner):
@@ -175,9 +179,9 @@ all_positioners.sort()
 ############### LineSlice #################
 
 
-class LineSlice(object):
-    def __call__(self, line):
-        NotImplementedError("Base class !!!")
+class LineSlice(LinePositioner):
+    def __slice__(self, line, step=1):
+        return slice(0, line, step)
 
 
 class CurrentWord(LineSlice):
@@ -188,7 +192,7 @@ class CurrentWord(LineSlice):
 CurrentWord = CurrentWord()
 
 
-class NextWord(LineSlice):
+class NextWord(LinePositioner):
     def __call__(self, line):
         work = TextLine(line)
         work.point = NextWordStart
@@ -200,7 +204,7 @@ class NextWord(LineSlice):
 NextWord = NextWord()
 
 
-class PrevWord(LineSlice):
+class PrevWord(LinePositioner):
     def __call__(self, line):
         work = TextLine(line)
         work.point = PrevWordEnd
@@ -212,7 +216,7 @@ class PrevWord(LineSlice):
 PrevWord = PrevWord()
 
 
-class PointSlice(LineSlice):
+class PointSlice(LinePositioner):
     def __call__(self, line):
         return slice(Point(line), Point(line) + 1, None)
 
@@ -223,19 +227,17 @@ PointSlice = PointSlice()
 ###############  TextLine  ######################
 
 
-class TextLine(object):
-    """A line of text.
+class TextLine(collections.abc.MutableSequence):
+    """A line of text."""
 
-    .. versionchanged:: now subclasses str.
+    undo_stack = []
+    overwrite = False
 
-    """
-
-    def __init__(self, txtstr, point=None, mark=None, **kwargs):
+    def __init__(self, txtstr, point=None, mark=None):
+        self.txtstr = txtstr
         self.line_buffer = []
         self._point = 0
         self.mark = -1
-        self.undo_stack = []
-        self.overwrite = False
         # Wait this is so weird. Why do we check for this upon initialization?
         # wouldn't it make more sense to just define how we copy this?
         if isinstance(txtstr, TextLine):  # copy
@@ -297,8 +299,11 @@ class TextLine(object):
             self.mark,
         )
 
-    def copy(self):
-        return self.__class__(self)
+    # oh lord is this a bad idea
+    # def __copy__(self):
+    #     return copy.copy(self)
+
+    # copy = __copy__
 
     def set_point(self, value):
         if isinstance(value, LinePositioner):
@@ -346,6 +351,9 @@ class TextLine(object):
         self.line_buffer = []
         self.point = 0
 
+    def __del__(self):
+        return self.reset_line()
+
     def end_of_line(self):
         self.point = len(self.line_buffer)
 
@@ -360,6 +368,8 @@ class TextLine(object):
             for c in biter(text):
                 self.line_buffer.insert(self.point, c)
                 self.point += 1
+
+    insert = _insert_text
 
     def __getitem__(self, key):
         """Check if key is LineSlice, convert to regular slice and continue processing."""
@@ -445,6 +455,9 @@ class TextLine(object):
     def __len__(self):
         return len(self.line_buffer)
 
+    def __iter__(self):
+        return iter(self.line_buffer)
+
     def upper(self):
         self.line_buffer = [x.upper() for x in self.line_buffer]
         return self
@@ -487,6 +500,8 @@ class ReadLineTextBuffer(TextLine):
 
     """
 
+    kill_ring = []
+
     def __init__(
         self,
         txtstr,
@@ -495,16 +510,20 @@ class ReadLineTextBuffer(TextLine):
         enable_win32_clipboard=True,
         selection_mark=-1,
         enable_selection=True,
-        kill_ring=None,
         kill_ring_to_clipboard=False,
+        **kwargs
     ):
-        super(ReadLineTextBuffer, self).__init__(txtstr, point, mark)
+        super(ReadLineTextBuffer, self).__init__(txtstr, point, mark, **kwargs)
         self.enable_win32_clipboard = enable_win32_clipboard
         self.selection_mark = selection_mark
         self.enable_selection = enable_selection
-        if kill_ring is None:
-            self.kill_ring = []
-
+        self.txtstr = txtstr
+        if isinstance(txtstr, TextLine):  # copy
+            self.line_buffer = txtstr.line_buffer[:]
+        elif isinstance(txtstr, str):
+            self.line_buffer = txtstr
+        else:
+            raise TypeError
         self.kill_ring_to_clipboard = kill_ring_to_clipboard
 
     def __repr__(self):
@@ -865,8 +884,6 @@ class ReadLineTextBuffer(TextLine):
 
 
 ##################################################################
-q = ReadLineTextBuffer("asff asFArw  ewrWErhg", point=8)
-q = TextLine("asff asFArw  ewrWErhg", point=8)
 
 
 def show_pos(buff, pos, chr="."):
@@ -882,10 +899,10 @@ def show_pos(buff, pos, chr="."):
 
 
 def test_positioner(buff, points, positioner):
-    print((" %s " % positioner.__class__.__name__).center(40, "-"))
+    # print((" %s " % positioner.__class__.__name__).center(40, "-"))
     buffstr = buff.line_buffer
 
-    print('"%s"' % (buffstr))
+    # print('"%s"' % (buffstr))
     for point in points:
         b = TextLine(buff, point=point)
         out = [" "] * (len(buffstr) + 1)
@@ -895,10 +912,21 @@ def test_positioner(buff, points, positioner):
         else:
             out[point] = "."
             out[pos] = "^"
-        print('"%s"' % ("".join(out)))
+        # print('"%s"' % ("".join(out)))
 
 
 if __name__ == "__main__":
+    q = ReadLineTextBuffer("asff asFArw  ewrWErhg", point=8)
+    q = TextLine("asff asFArw  ewrWErhg", point=8)
+
+    lines = [
+        TextLine("abc"),
+        TextLine("abc def"),
+        TextLine("abc def  ghi"),
+        TextLine("  abc  def  "),
+    ]
+    l = lines[2]
+    l.point = 5
 
     print('%-15s "%s"' % ("Position", q.get_line_text()))
     print('%-15s "%s"' % ("Point", show_pos(q, q.point)))

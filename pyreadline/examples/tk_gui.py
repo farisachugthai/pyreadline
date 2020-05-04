@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Mockup of gui-use of pyreadline."""
 # *****************************************************************************
 #       Copyright (C) 2006  Jorgen Stenarson. <jorgen.stenarson@bostream.nu>
 #
@@ -6,18 +7,11 @@
 #  the file COPYING, distributed as part of this software.
 # *****************************************************************************
 
-""" Mockup of gui-use of pyreadline
-
-
-"""
 from __future__ import print_function, unicode_literals, absolute_import
-import sys
 import Tkinter
+
 from pyreadline.rlmain import BaseReadline
 from pyreadline.keysyms.common import KeyPress
-import pyreadline.logger as log
-
-log.sock_silent = False
 
 translate = {
     "plus": "+",
@@ -51,11 +45,12 @@ def KeyPress_from_event(event):
 
 
 class App:
-    def __init__(self, master):
-        self.frame = frame = Tkinter.Frame(master)
-        frame.pack()
+    def __init__(self, master, frame=None, **kwargs):
+        self.master = master
+        self.frame = Tkinter.Frame(master)
+        self.frame.pack()
         self.lines = ["Hello"]
-        self.RL = BaseReadline()
+        self.RL = BaseReadline(**kwargs)
         self.RL.read_inputrc()
         self.prompt = ">>>"
         self.readline_setup(self.prompt)
@@ -97,12 +92,17 @@ class App:
 
     def _update_line(self):
         self.textvar.set(
-            "\n".join(self.lines + [self.prompt +
-                                    " " + self.RL.get_line_buffer()])
+            "\n".join(self.lines + [self.prompt + " " + self.RL.get_line_buffer()])
         )
 
 
-root = Tkinter.Tk()
-
 display = App(root)
-root.mainloop()
+
+
+def main():
+    root = Tkinter.Tk()
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    main()

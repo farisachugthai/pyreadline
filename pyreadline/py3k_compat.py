@@ -23,7 +23,7 @@ if sys.version_info[0] >= 3:
     from builtins import str, bytes
 
     # bytes = bytes
-    from io import StringIO
+    from io import StringIO, open
     import collections
 
     PY3 = True
@@ -33,10 +33,17 @@ if sys.version_info[0] >= 3:
 
     def execfile(fname, glob=None, loc=None):
         glob = glob if glob is not None else globals()
-        loc = loc if loc is not None else glob
-        with open(fname) as fil:
+        loc = loc if loc is not None else locals()
+        with open(fname, "rb") as fil:
             txt = fil.read()
-        exec(compile(txt, fname, "exec"), glob, loc)
+            try:
+                code_obj = compile(txt, fname, "exec")
+            except Exception:
+                raise
+            try:
+                exec(code_obj, glob, loc)
+            except Exception:
+                raise
 
     unicode = str
 else:

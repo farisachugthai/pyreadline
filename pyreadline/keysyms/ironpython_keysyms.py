@@ -7,7 +7,12 @@
 #  the file COPYING, distributed as part of this software.
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
-import System
+
+try:
+    import System
+except ImportError:
+    System = None
+
 from .common import validkey, KeyPress, make_KeyPress_from_keydescr
 
 c32 = System.ConsoleKey

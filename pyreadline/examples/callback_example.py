@@ -1,5 +1,4 @@
-"""
-Example script using the callback interface of readline.
+"""Example script using the callback interface of readline.
 
 :author: strank
 """
@@ -7,16 +6,16 @@ from __future__ import print_function, unicode_literals, absolute_import
 
 __docformat__ = "restructuredtext en"
 
+import msvcrt
 import sys
 import os
 import time
 
 import readline
 
-import msvcrt
-from readline import rl
-import readline
+from pyreadline.rlmain import Readline
 
+rl = Readline()
 prompting = True
 count = 0
 maxlines = 10
@@ -48,8 +47,7 @@ def lineReceived(line):
         readline.callback_handler_remove()
     else:
         readline.callback_handler_install(
-            "Got %s of %s, more typing please:" % (
-                count, maxlines) + os.linesep,
+            "Got %s of %s, more typing please:" % (count, maxlines) + os.linesep,
             lineReceived,
         )
 

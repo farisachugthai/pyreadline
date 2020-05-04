@@ -12,9 +12,25 @@ mybuffer = ""
 
 
 def GetClipboardText():
+    """
+
+    Returns
+    -------
+
+    """
     return mybuffer
 
 
 def SetClipboardText(text):
+    """
+
+    Parameters
+    ----------
+    text :
+
+    Returns
+    -------
+    object
+    """
     global mybuffer
     mybuffer = text

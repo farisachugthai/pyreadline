@@ -7,19 +7,32 @@
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
 
+import pprint
 import sys
-import unittest
+import tempfile
 
 from pyreadline.py3k_compat import StringIO
-# from pyreadline.test.common import *
-from pyreadline.logger import log
-from pyreadline.lineeditor import lineobj
-from pyreadline import keysyms
-from pyreadline.modes.vi import (
-    ViMode, vi_pos_matching, vi_pos_word_long, vi_pos_find_char_backward,
-    vi_pos_find_char_forward, vi_pos_end_short, vi_pos_back_long, vi_pos_back_short
-    vi_pos_to_char_forward, vi_pos_to_char_backward
+from pyreadline.test.common import (
+    keytext_to_keyinfo_and_event, MockReadline, MockConsole, Tester
 )
+from pyreadline.test.common import *
+from pyreadline.modes.vi import (
+    ViMode,
+    vi_is_word,
+    vi_pos_matching,
+    vi_pos_word_long,
+    vi_pos_end_long,
+    vi_pos_find_char_backward,
+    vi_pos_find_char_forward,
+    vi_pos_end_short,
+    vi_pos_back_long,
+    vi_pos_back_short,
+    vi_pos_to_char_forward,
+    vi_pos_to_char_backward,
+    vi_pos_word_short,
+    ViExternalEditor,
+)
+
 # from pyreadline.modes.vi import *
 
 sys.path.insert(0, "../..")
@@ -31,7 +44,7 @@ class ViModeTest(ViMode):
     tested_commands = {}
 
     def __init__(self):
-        super().__init__(self, MockReadline())
+        super().__init__(MockReadline())
         self.mock_console = MockConsole()
         self.init_editing_mode(None)
         self.vi_set_insert_mode(True)
@@ -56,7 +69,7 @@ class ViModeTest(ViMode):
     def get_line_cursor(self):
         return self.l_buffer.point
 
-    line_cursor = property(get_line_cursor)
+    line_cursor: property = property(get_line_cursor)
 
     def input(self, keytext):
         if keytext[0] == '"' and keytext[-1] == '"':
@@ -78,15 +91,25 @@ class ViModeTest(ViMode):
     def mock_completer(self, text, state):
         return self.lst_completions[state]
 
+    def __repr__(self):
+        return repr(self.__class__.__name__)
+
+    def __str__(self):
+        return pprint.pprint(str(vars(self)))
+
 
 class ViExternalEditorTest(ViExternalEditor):
-    def __init__(self, line):
+    """Mock the External editor class."""
+
+    def __init__(self, line, command=None, filename=None):
+        self.command = command
+        self.remove = filename
         self.sio_write = StringIO()
         self.sio_read = StringIO("qwerty after")
-        ViExternalEditor.__init__(self, line)
+        super(ViExternalEditorTest, self).__init__(line)
 
     def get_tempfile(self):
-        return "temp.py"
+        return tempfile.mktemp()
 
     def get_editor(self):
         return "vim.exe"
@@ -98,10 +121,10 @@ class ViExternalEditorTest(ViExternalEditor):
             return self.sio_read
 
     def file_remove(self, filename):
-        self.remove = filename
+        pass
 
     def run_command(self, command):
-        self.command = command
+        pass
 
 
 # ----------------------------------------------------------------------
@@ -1426,6 +1449,10 @@ class Tests(unittest.TestCase):
         r.input('"U"')
         self.assertEqual(r.line, "")
 
+    ##########
+    # History:
+    ##########
+
     def test_history_no_match(self):
         r = ViModeTest()
         r.add_history("abc 123")
@@ -1704,7 +1731,7 @@ class Tests(unittest.TestCase):
         r.input('"j"')
         self.assertEqual(r.line, "")
 
-    def test_history_input_j_and_k(self):
+    def test_history_input_j_and_k(self) -> object:
         r = ViModeTest()
         r.add_history("aaa")
         r.input("Escape")
@@ -1749,71 +1776,6 @@ class Tests(unittest.TestCase):
         r.input("Escape")
         r.input('"u"')
         self.assertEqual(r.line, "aaa")
-
-    # TODO: mode support?
-    #     def test_mode (self):
-    #         r = ViModeTest ()
-    #         self.assertEqual (r.editing_mode, Readline.mode_vi)
-    #         self.assertEqual (r.mode (verbose=False), Readline.mode_vi)
-    #         self.assertEqual (r.count_vi_editing_mode, 1)
-    #         self.assertEqual (r.count_emacs_editing_mode, 0)
-    #         r.vi ()
-    #         self.assertEqual (r.editing_mode, Readline.mode_vi)
-    #         self.assertEqual (r.mode (verbose=False), Readline.mode_vi)
-    #         self.assertEqual (r.count_vi_editing_mode, 1)
-    #         self.assertEqual (r.count_emacs_editing_mode, 0)
-    #         r.emacs ()
-    #         self.assertEqual (r.editing_mode, Readline.mode_emacs)
-    #         self.assertEqual (r.mode (verbose=False), Readline.mode_emacs)
-    #         self.assertEqual (r.count_vi_editing_mode, 1)
-    #         self.assertEqual (r.count_emacs_editing_mode, 1)
-    #         r.emacs ()
-    #         self.assertEqual (r.editing_mode, Readline.mode_emacs)
-    #         self.assertEqual (r.mode (verbose=False), Readline.mode_emacs)
-    #         self.assertEqual (r.count_vi_editing_mode, 1)
-    #         self.assertEqual (r.count_emacs_editing_mode, 1)
-    #         r.vi ()
-    #         self.assertEqual (r.editing_mode, Readline.mode_vi)
-    #         self.assertEqual (r.mode (verbose=False), Readline.mode_vi)
-    #         self.assertEqual (r.count_vi_editing_mode, 2)
-    #         self.assertEqual (r.count_emacs_editing_mode, 1)
-    #
-    #     def test_switch_mode (self):
-    #         r = ViModeTest ()
-    #         r._set_line ('')
-    #         r.input ('Escape')
-    #         self.assertEqual (r.editing_mode, Readline.mode_vi)
-    #         self.assertEqual (r.count_vi_editing_mode, 1)
-    #         self.assertEqual (r.count_emacs_editing_mode, 0)
-    #         r.input ('"abc"')
-    #         r.input ('Control-e')
-    #         self.assertEqual (r.editing_mode, Readline.mode_emacs)
-    #         self.assertEqual (r.count_vi_editing_mode, 1)
-    #         self.assertEqual (r.count_emacs_editing_mode, 1)
-    #         r.input ('Meta-Control-j')
-    #         self.assertEqual (r.editing_mode, Readline.mode_vi)
-    #         self.assertEqual (r.count_vi_editing_mode, 2)
-    #         self.assertEqual (r.count_emacs_editing_mode, 1)
-
-    # TODO: show history support?
-    #     def test_history_output (self):
-    #         import StringIO
-    #         sio = StringIO.StringIO ()
-    #         r = ViModeTest ()
-    #         r.add_history ('abc')
-    #         r.add_history ('def')
-    #         r.add_history ('ghi')
-    #         r.show_history (sio)
-    #         sio.seek (0)
-    #         self.assertEqual (sio.read(), '  1 abc\n  2 def\n  3 ghi\n')
-
-    def test_editor(self):
-        vee = ViExternalEditorTest("qwerty before")
-        self.assertTrue(vee.sio_write.closed)
-        self.assertEqual(vee.command, "vim.exe temp.py")
-        self.assertTrue(vee.sio_read.closed)
-        self.assertEqual(vee.remove, "temp.py")
-        self.assertEqual(vee.result, "qwerty after")
 
     def test_completer(self):
         r = ViModeTest()
@@ -2168,6 +2130,76 @@ class Tests(unittest.TestCase):
         self.assertEqual(r.line, "zzz")
 
 
+class TestViExternalEditor(unittest.TestCase):
+    def test_editor(self):
+        vee = ViExternalEditor("qwerty before")
+        # self.assertTrue(vee.sio_write.closed)
+        self.assertEqual(vee.command, "vim.exe temp.py")
+        # self.assertTrue(vee.sio_read.closed)
+        self.assertEqual(vee.remove, "temp.py")
+        self.assertEqual(vee.result, "qwerty after")
+
+
+class TestViModeMode(unittest.TestCase):
+
+    # I swear on everything that ModeMode isn't a typo
+    def test_mode(self):
+        r = ViMode(MockReadline())
+        self.assertEqual(r.editing_mode, Readline.mode_vi)
+        self.assertEqual(r.mode(verbose=False), Readline.mode_vi)
+        self.assertEqual(r.count_vi_editing_mode, 1)
+        self.assertEqual(r.count_emacs_editing_mode, 0)
+        r.vi()
+        self.assertEqual(r.editing_mode, Readline.mode_vi)
+        self.assertEqual(r.mode(verbose=False), Readline.mode_vi)
+        self.assertEqual(r.count_vi_editing_mode, 1)
+        self.assertEqual(r.count_emacs_editing_mode, 0)
+        r.emacs()
+        self.assertEqual(r.editing_mode, Readline.mode_emacs)
+        self.assertEqual(r.mode(verbose=False), Readline.mode_emacs)
+        self.assertEqual(r.count_vi_editing_mode, 1)
+        self.assertEqual(r.count_emacs_editing_mode, 1)
+        r.emacs()
+        self.assertEqual(r.editing_mode, Readline.mode_emacs)
+        self.assertEqual(r.mode(verbose=False), Readline.mode_emacs)
+        self.assertEqual(r.count_vi_editing_mode, 1)
+        self.assertEqual(r.count_emacs_editing_mode, 1)
+        r.vi()
+        self.assertEqual(r.editing_mode, Readline.mode_vi)
+        self.assertEqual(r.mode(verbose=False), Readline.mode_vi)
+        self.assertEqual(r.count_vi_editing_mode, 2)
+        self.assertEqual(r.count_emacs_editing_mode, 1)
+
+    def test_switch_mode(self):
+        r = ViMode(MockReadline())
+        r._set_line('')
+        r.input('Escape')
+        self.assertEqual(r.editing_mode, Readline.mode_vi)
+        self.assertEqual(r.count_vi_editing_mode, 1)
+        self.assertEqual(r.count_emacs_editing_mode, 0)
+        r.input('"abc"')
+        r.input('Control-e')
+        self.assertEqual(r.editing_mode, Readline.mode_emacs)
+        self.assertEqual(r.count_vi_editing_mode, 1)
+        self.assertEqual(r.count_emacs_editing_mode, 1)
+        r.input('Meta-Control-j')
+        self.assertEqual(r.editing_mode, Readline.mode_vi)
+        self.assertEqual(r.count_vi_editing_mode, 2)
+        self.assertEqual(r.count_emacs_editing_mode, 1)
+
+    # wtf
+    def test_history_output(self):
+        # import StringIO
+        from pyreadline.py3k_compat import StringIO
+        sio = StringIO()
+        r = ViModeTest()
+        r.add_history('abc')
+        r.add_history('def')
+        r.add_history('ghi')
+        r.show_history(sio)
+        sio.seek(0)
+        self.assertEqual(sio.read(), '  1 abc\n  2 def\n  3 ghi\n')
+
 # ----------------------------------------------------------------------
 # utility functions
 
@@ -2176,7 +2208,6 @@ class Tests(unittest.TestCase):
 
 if __name__ == "__main__":
     Tester()
-
     tested = list(ViModeTest.tested_commands.keys())
     tested.sort()
     print(" Tested functions ".center(60, "-"))

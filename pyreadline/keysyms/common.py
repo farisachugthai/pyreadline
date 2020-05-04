@@ -100,8 +100,7 @@ validkey = set(
     ]
 )
 
-escape_sequence_to_special_key = {
-    "\\e[a": "up", "\\e[b": "down", "del": "delete"}
+escape_sequence_to_special_key = {"\\e[a": "up", "\\e[b": "down", "del": "delete"}
 
 
 class KeyPress(object):
@@ -188,7 +187,3 @@ def make_KeyPress_from_keydescr(keydescr):
             else:
                 keyinfo.char = keydescr
             return keyinfo
-
-
-if __name__ == "__main__":
-    import startup
