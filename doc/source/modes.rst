@@ -30,16 +30,6 @@ Emacs
    :show-inheritance:
 
 
-Vi
----
-
-.. automodule:: pyreadline.modes.vi
-   :synopsis: Readline Vi Mode
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-
 NotEmacs
 --------
 

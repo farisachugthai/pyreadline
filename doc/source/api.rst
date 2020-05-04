@@ -5,6 +5,7 @@ API
 .. As i continue realizing how much code is here
    it's kinda necessary to simply make a dump now
 
+
 The Main Module
 ===============
 
@@ -76,6 +77,7 @@ Other
    :members:
    :undoc-members:
    :show-inheritance:
+
 
 .. automodule:: pyreadline.unicode_helper
    :members:
