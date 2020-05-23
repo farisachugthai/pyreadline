@@ -1,5 +1,99 @@
 # -*- coding: utf-8 -*-
-"""An attempt to implement readline for Python in Python using ctypes."""
+"""An attempt to implement readline for Python in Python using ctypes.
+
+Original Readline Functions
+---------------------------
+::
+
+    get_begidx(...)
+        get_begidx() -> int
+        get the beginning index of the completion scope
+
+    get_completer(...)
+        get_completer() -> function
+
+        Returns current completer function.
+
+    get_completer_delims(...)
+        get_completer_delims() -> string
+        get the word delimiters for completion
+
+    get_completion_type(...)
+        get_completion_type() -> int
+        Get the type of completion being attempted.
+
+    get_endidx(...)
+        get_endidx() -> int
+        get the ending index of the completion scope
+
+    get_line_buffer(...)
+        get_line_buffer() -> string
+        return the current contents of the line buffer.
+
+    insert_text(...)
+        insert_text(string) -> None
+        Insert text into the line buffer at the cursor position.
+
+    parse_and_bind(...)
+        parse_and_bind(string) -> None
+        Execute the init line provided in the string argument.
+
+    read_init_file(...)
+        read_init_file([filename]) -> None
+        Execute a readline initialization file.
+        The default filename is the last filename used.
+
+    redisplay(...)
+        redisplay() -> None
+        Change what's displayed on the screen to reflect the current
+        contents of the line buffer.
+
+    remove_history_item(...)
+        remove_history_item(pos) -> None
+        remove history item given by its position
+
+    replace_history_item(...)
+        replace_history_item(pos, line) -> None
+        replaces history item given by its position with contents of line
+
+    set_auto_history(...)
+        set_auto_history(enabled) -> None
+        Enables or disables automatic history.
+
+    set_completer(...)
+        set_completer([function]) -> None
+        Set or remove the completer function.
+        The function is called as function(text, state),
+        for state in 0, 1, 2, ..., until it returns a non-string.
+        It should return the next possible completion starting with 'text'.
+
+    set_completer_delims(...)
+        set_completer_delims(string) -> None
+        set the word delimiters for completion
+
+    set_completion_display_matches_hook(...)
+        set_completion_display_matches_hook([function]) -> None
+        Set or remove the completion display function.
+        The function is called as
+          function(substitution, [matches], longest_match_length)
+        once each time matches need to be displayed.
+
+    set_pre_input_hook(...)
+        set_pre_input_hook([function]) -> None
+        Set or remove the function invoked by the rl_pre_input_hook callback.
+        The function is called with no arguments after the first prompt
+        has been printed and just before readline starts reading input
+        characters.
+
+    set_startup_hook(...)
+        set_startup_hook([function]) -> None
+        Set or remove the function invoked by the rl_startup_hook callback.
+        The function is called with no arguments just
+        before readline prints the first prompt.
+
+
+
+"""
 # *****************************************************************************
 #       Copyright (C) 2003-2006 Gary Bishop.
 #       Copyright (C) 2006  Jorgen Stenarson. <jorgen.stenarson@bostream.nu>

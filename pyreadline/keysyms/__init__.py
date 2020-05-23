@@ -14,13 +14,12 @@ if in_ironpython:
     except ImportError:
         raise
 else:
-    if sys.platform.startswith("Win"):
-        try:
-            from .keysyms import *
+    try:
+        from .keysyms import *
 
-            success = True
-        except ImportError:
-            # raise ImportError("Could not import: %s" % x)
-            traceback.print_exception(*x)
-    else:
-        sys.exit("This is a Windows only program. Comment me out if you want but...")
+        success = True
+    except ImportError:
+        # raise ImportError("Could not import: %s" % x)
+        traceback.print_exception(*sys.exc_info())
+    # else:
+    #     sys.exit("This is a Windows only program. Comment me out if you want but...")

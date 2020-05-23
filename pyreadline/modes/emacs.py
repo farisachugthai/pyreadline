@@ -266,9 +266,9 @@ class EmacsMode(DigitArgumentMode):
         self.next_meta = next_meta
 
         self.process_keyevent_queue = [self._process_keyevent]
-        self._history = LineHistory(
-            _history_cursor, _history_length, history,  # history_filename
-        )
+        self._history = LineHistory()
+            # _history_cursor, _history_length, history,  # history_filename
+        # )
         super().__init__(rlobj, *args, *kwargs)
 
     def __repr__(self):
