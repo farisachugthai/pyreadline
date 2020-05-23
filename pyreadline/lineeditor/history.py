@@ -6,29 +6,21 @@
 #  the file COPYING, distributed as part of this software.
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
-
-import collections
-import io
-import os
-import sys
-
 from pyreadline.logger import log
-from pyreadline.lineeditor import lineobj
+from . import lineobj
+import re
+import operator
+import string
+import sys
+import os
+import io
 
-from pyreadline.unicode_helper import ensure_str
+from pyreadline.unicode_helper import ensure_unicode, ensure_str
 
-# this could be neat
-# try:
-#     from _io import _WindowsConsoleIO
-# except ImportError:
-#     pass
-# else:
-#     RawIOBase.register(_WindowsConsoleIO)
-
-# if "pyreadline" in sys.modules:
-#     pyreadline = sys.modules["pyreadline"]
-# else:
-#     import pyreadline
+if "pyreadline" in sys.modules:
+    pyreadline = sys.modules["pyreadline"]
+else:
+    import pyreadline
 
 
 class EscapeHistory(Exception):
@@ -36,25 +28,7 @@ class EscapeHistory(Exception):
 
 
 class LineHistory(object):
-    def __init__(
-        self, _history_cursor=0, _history_length=100, history=None,
-    ):
-        """Initialize the LineHistory object.
-
-        Parameters
-        ----------
-        history : list, optional
-            An initial value of history lines.
-        _history_cursor : int, optional
-            Proxy for history_cursor property.
-        _history_length : int, optional
-            Proxy for history_length property.
-        """
-        # so hold up i assume this means we don't read in the history file
-        # upon initialization. TODO: who does?
-        self.history = [] if history is None else history
-        self._history_length = _history_length
-        self._history_cursor = _history_cursor
+    def __init__(self):
         self.history = []
         self._history_length = 100
         self._history_cursor = 0
@@ -87,7 +61,8 @@ class LineHistory(object):
         return item.get_line_text()
 
     def set_history_length(self, value):
-        log("set_history_length: old:%d new:%d" % (self._history_length, value))
+        log("set_history_length: old:%d new:%d" %
+            (self._history_length, value))
         self._history_length = value
 
     def get_history_cursor(self):
@@ -96,7 +71,8 @@ class LineHistory(object):
         return value
 
     def set_history_cursor(self, value):
-        log("set_history_cursor: old:%d new:%d" % (self._history_cursor, value))
+        log("set_history_cursor: old:%d new:%d" %
+            (self._history_cursor, value))
         self._history_cursor = value
 
     history_length = property(get_history_length, set_history_length)
@@ -116,7 +92,7 @@ class LineHistory(object):
         try:
             with io.open(filename, "rt", encoding="utf-8") as fd:
                 for line in fd:
-                    self.add_history(line.strip())
+                    self.add_history(lineobj.ReadLineTextBuffer(line.rstrip()))
         except OSError:
             self.history = []
             self.history_cursor = 0
@@ -132,20 +108,18 @@ class LineHistory(object):
 
     def add_history(self, line):
         """Append a line to the history buffer, as if it was the last line typed."""
-        self.history.append(line)
-        # Jesus christ
-        # line = ensure_unicode(line)
-        # if not hasattr(line, "get_line_text"):
-        #     line = lineobj.ReadLineTextBuffer(line)
-        # if not line.get_line_text():
-        #     pass
-        # elif (
-        #     len(self.history) > 0
-        #     and self.history[-1].get_line_text() == line.get_line_text()
-        # ):
-        #     pass
-        # else:
-        #     self.history.append(line)
+        line = ensure_unicode(line)
+        if not hasattr(line, "get_line_text"):
+            line = lineobj.ReadLineTextBuffer(line)
+        if not line.get_line_text():
+            pass
+        elif (
+            len(self.history) > 0
+            and self.history[-1].get_line_text() == line.get_line_text()
+        ):
+            pass
+        else:
+            self.history.append(line)
         self.history_cursor = len(self.history)
 
     def previous_history(self, current):  # (C-p)
@@ -214,7 +188,8 @@ class LineHistory(object):
     def forward_search_history(self, searchfor, startpos=None):
         if startpos is None:
             startpos = min(
-                self.history_cursor, max(0, self.get_current_history_length() - 1)
+                self.history_cursor, max(
+                    0, self.get_current_history_length() - 1)
             )
         origpos = startpos
 
@@ -260,7 +235,8 @@ class LineHistory(object):
                 h = self.history[hc]
                 if not self.query:
                     self.history_cursor = hc
-                    result = lineobj.ReadLineTextBuffer(h, point=len(h.get_line_text()))
+                    result = lineobj.ReadLineTextBuffer(
+                        h, point=len(h.get_line_text()))
                     return result
                 elif h.get_line_text().startswith(self.query) and (
                     h != partial.get_line_text()
@@ -282,7 +258,8 @@ class LineHistory(object):
                     and self.query
                 ):
                     return lineobj.ReadLineTextBuffer(
-                        self.history[max(min(hcstart, len(self.history) - 1), 0)],
+                        self.history[max(
+                            min(hcstart, len(self.history) - 1), 0)],
                         point=partial.point,
                     )
                 else:
@@ -309,165 +286,11 @@ class LineHistory(object):
         return q
 
 
-class HistoryFile(io.TextIOWrapper):
-    def __fspath__(self):
-        return str(self.name)
-
-    def __repr__(self):
-        return "<%s: %s>" % (self.__class__.__name__, repr(self.name))
-
-    def touch(self, filename: str) -> os.PathLike:
-        return touch(filename)
-
-
-# on god `self.assertIsInstance(OrderedHistory(), list)` just failed
-# class OrderedHistory(collections.UserList):
-class OrderedHistory(collections.abc.MutableSequence):
-    def __init__(self, history=None, history_buffer=None, filename=None, **kwargs):
-        self.history_filename = None
-        self.history = history if history is not None else []
-
-        super().__init__()
-        try:
-            self.filename = (
-                filename
-                if filename is not None
-                else os.path.expanduser("~/.python_history")
-            )
-        except PermissionError:
-            raise
-        except OSError:
-            self.filename = io.StringIO()
-
-        # self.history_buffer = history_buffer if history_buffer is not None else HistoryFile()
-        # self.read_history_file()
-
-    def __repr__(self):
-        return " %s " % self.__class__.__name__
-
-    def __eq__(self, other):
-        return self.history == other
-
-    def __hash__(self):
-        return hash(self.history)
-
-    def __mro__(self):
-        mro = getmro(self.__class__)
-        ha = ("list", mro)
-        return ha
-
-    def add_history(self, line):
-        """Append a line to the history buffer, as if it was the last line typed."""
-        # Dont add an empty line
-        if len(line) == 0:
-            return
-        # or one that's a duplicate of the previous
-        elif len(self.history) > 0 and len(self.history[-1]) == len(line):
-            if self.history[-1] != line:
-                self.history.append(line)
-        else:
-            self.history.append(line)
-
-    def __len__(self):
-        return len(self.history)
-
-    def __getitem__(self, index):
-        return self.history[index]
-
-    def __setitem__(self, idx, line, *args):
-        if args:
-            self.history[idx] = [line, *args]
-        else:
-            self.history[idx] = [line]
-
-    def __delitem__(self, idx):
-        del self.history[idx]
-
-    def __add__(self, line):
-        if isinstance(line, OrderedHistory):
-            self.history.extend(line)
-            self.write_history_file()
-        else:
-            self.history.append(line)
-
-    def __iadd__(self, line):
-        # So i recognize that this means in place addition is actually quite
-        # different. however we don't do that anywhere in the repo so i'm trying
-        # this out
-        self.history.append(line)
-
-    def insert(self, item, idx=0):
-        self.history.insert(idx, item)
-
-    def get_history_item(self, index):
-        return self.history.__getitem__(index)
-
-    def get_history_slice(self, start=0, stop=None, step=1):
-        return slice(self.history[start], self.history[stop], step)
-
-    def __slice__(self, start=0, stop=None, step=1):
-        return self.get_history_slice(start, stop, step)
-
-    def read_history_file(self, filename=None, encoding=None):
-        """Load a readline history file."""
-        if encoding is None:
-            encoding = sys.getdefaultencoding()
-        if filename is None:
-            filename = self.filename
-        try:
-            with io.open(filename, "rt", encoding=encoding) as fd:
-                for line in fd:
-                    self.add_history(dedent(line))
-        except PermissionError:
-            raise
-        except OSError:
-            self.history = []
-        except UnicodeDecodeError:
-            raise  # TODO:
-
-    def reset(self):
-        self.history.clear()
-
-    def flush(self):
-        """Flush working contents and save to disk."""
-        self.write_history_file(full=True)
-
-    def __iter__(self):
-        return iter(self.history)
-
-    def __reversed__(self):
-        for key in self.history:
-            yield key
-
-    def write_history_file(self, filename=None, full: bool = False, line: str = None):
-        """Save a readline history file.
-
-        Parameters
-        ----------
-        full :
-        filename :
-        line : object
-        """
-        if filename is None:
-            filename = self.history_filename
-        with io.open(filename, "ab+") as fp:
-            if full:
-                for line in self.history:
-                    fp.write(line)
-            elif line is not None:
-                fp.write(line)
-
-
-def main():
-    """
-
-    Returns
-    -------
-    object
-    """
+if __name__ == "__main__":
     q = LineHistory()
     r = LineHistory()
-    RL = ReadLineTextBuffer()
+    s = LineHistory()
+    RL = lineobj.ReadLineTextBuffer
     q.add_history(RL("aaaa"))
     q.add_history(RL("aaba"))
     q.add_history(RL("aaca"))
@@ -475,7 +298,3 @@ def main():
     q.add_history(RL("bbb"))
     q.add_history(RL("ako"))
     r.add_history(RL("ako"))
-
-
-if __name__ == "__main__":
-    main()
