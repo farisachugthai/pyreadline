@@ -17,7 +17,7 @@ from pyreadline.lineeditor import lineobj
 from pyreadline import keysyms
 from pyreadline.modes.vi import (
     ViMode, vi_pos_matching, vi_pos_word_long, vi_pos_find_char_backward,
-    vi_pos_find_char_forward, vi_pos_end_short, vi_pos_back_long, vi_pos_back_short
+    vi_pos_find_char_forward, vi_pos_end_short, vi_pos_back_long, vi_pos_back_short,
     vi_pos_to_char_forward, vi_pos_to_char_backward
 )
 # from pyreadline.modes.vi import *
