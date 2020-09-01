@@ -1,23 +1,4 @@
 # -*- coding: utf-8 -*-
-"""Vi Mode.
-
-Vi input states
----------------
-
-Sequence of possible states are in the order below.:
-
-_VI_BEGIN = "vi_begin"
-_VI_MULTI1 = "vi_multi1"
-_VI_ACTION = "vi_action"
-_VI_MULTI2 = "vi_multi2"
-_VI_MOTION = "vi_motion"
-_VI_MOTION_ARGUMENT = "vi_motion_argument"
-_VI_REPLACE_ONE = "vi_replace_one"
-_VI_TEXT = "vi_text"
-_VI_SEARCH = "vi_search"
-_VI_END = "vi_end"
-
-"""
 # *****************************************************************************
 #       Copyright (C) 2003-2006 Gary Bishop.
 #       Copyright (C) 2006  Michael Graz. <mgraz@plan10.com>
@@ -28,39 +9,11 @@ _VI_END = "vi_end"
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
 import os
-
-# import pyreadline.logger as logger
+import pyreadline.logger as logger
 from pyreadline.logger import log
-from pyreadline.lineeditor import lineobj
-
-# from pyreadline.lineeditor import history
-from pyreadline.modes import basemode
-
-
-# Globals:
-
-_VI_BEGIN = "vi_begin"
-_VI_MULTI1 = "vi_multi1"
-_VI_ACTION = "vi_action"
-_VI_MULTI2 = "vi_multi2"
-_VI_MOTION = "vi_motion"
-_VI_MOTION_ARGUMENT = "vi_motion_argument"
-_VI_REPLACE_ONE = "vi_replace_one"
-_VI_TEXT = "vi_text"
-_VI_SEARCH = "vi_search"
-_VI_END = "vi_end"
-
-
-_vi_dct_matching = {
-    "<": (">", +1),
-    ">": ("<", -1),
-    "(": (")", +1),
-    ")": ("(", -1),
-    "[": ("]", +1),
-    "]": ("[", -1),
-    "{": ("}", +1),
-    "}": ("{", -1),
-}
+import pyreadline.lineeditor.lineobj as lineobj
+import pyreadline.lineeditor.history as history
+from . import basemode
 
 
 class ViMode(basemode.BaseMode):
@@ -97,17 +50,10 @@ class ViMode(basemode.BaseMode):
             return True
         return False
 
-    # Methods below here are bindable emacs functions
+    ### Methods below here are bindable emacs functions
 
-    def init_editing_mode(self, *args):  # (M-C-j)
-        """Initialize vi editingmode.
-
-        Typically bound to :kbd:`M-C-j`.
-
-        Used to accept parameter 'e' but didn't use it. However this function
-        is called in enough places in the repo that we need to keep
-        the interface consistent even if we ignore the 'args'.
-        """
+    def init_editing_mode(self, e):  # (M-C-j)
+        """Initialize vi editingmode"""
         self.show_all_if_ambiguous = "on"
         self.key_dispatch = {}
         self.__vi_insert_mode = None
@@ -237,7 +183,7 @@ class ViMode(basemode.BaseMode):
 
     def vi_save_line(self):
         if self._vi_undo_stack and self._vi_undo_cursor >= 0:
-            del self._vi_undo_stack[self._vi_undo_cursor + 1:]
+            del self._vi_undo_stack[self._vi_undo_cursor + 1 :]
         # tpl_undo = (self.l_buffer.point, self.l_buffer[:], )
         tpl_undo = (
             self.l_buffer.point,
@@ -371,9 +317,21 @@ class ViMode(basemode.BaseMode):
             return self.vi_key(e)
 
 
-class ViCommand:
-    """Vi Helper Class."""
+# vi input states
+# sequence of possible states are in the order below
+_VI_BEGIN = "vi_begin"
+_VI_MULTI1 = "vi_multi1"
+_VI_ACTION = "vi_action"
+_VI_MULTI2 = "vi_multi2"
+_VI_MOTION = "vi_motion"
+_VI_MOTION_ARGUMENT = "vi_motion_argument"
+_VI_REPLACE_ONE = "vi_replace_one"
+_VI_TEXT = "vi_text"
+_VI_SEARCH = "vi_search"
+_VI_END = "vi_end"
 
+# vi helper class
+class ViCommand:
     def __init__(self, readline):
         self.readline = readline
         self.lst_char = []
@@ -490,8 +448,7 @@ class ViCommand:
         self.readline.vi_save_line()
         times = self.get_multiplier()
         cursor = self.readline.l_buffer.point
-        self.readline.l_buffer.line_buffer[cursor: cursor +
-                                           times] = char * times
+        self.readline.l_buffer.line_buffer[cursor : cursor + times] = char * times
         if times > 1:
             self.readline.l_buffer.point += times - 1
         self.end()
@@ -659,7 +616,7 @@ class ViCommand:
         if completions:
             text = " ".join(completions) + " "
             self.readline.l_buffer.line_buffer[
-                self.readline.begidx: self.readline.endidx + 1
+                self.readline.begidx : self.readline.endidx + 1
             ] = list(text)
             prefix_len = self.readline.endidx - self.readline.begidx
             self.readline.l_buffer.point += len(text) - prefix_len
@@ -789,7 +746,7 @@ class ViCommand:
     def key_C(self, char):
         self.is_edit = True
         self.readline.vi_set_insert_mode(True)
-        del self.readline.l_buffer.line_buffer[self.readline.l_buffer.point:]
+        del self.readline.l_buffer.line_buffer[self.readline.l_buffer.point :]
         self.state = _VI_TEXT
 
     def key_r(self, char):
@@ -971,18 +928,17 @@ class ViCommand:
         if self.pos_motion <= len(self.readline.l_buffer.line_buffer):
             self.readline.l_buffer.point = self.pos_motion
         else:
-            self.readline.l_buffer.point = len(
-                self.readline.l_buffer.line_buffer) - 1
+            self.readline.l_buffer.point = len(self.readline.l_buffer.line_buffer) - 1
 
     def yank(self):
         if self.pos_motion > self.readline.l_buffer.point:
             s = self.readline.l_buffer.line_buffer[
-                self.readline.l_buffer.point: self.pos_motion + self.delete_right
+                self.readline.l_buffer.point : self.pos_motion + self.delete_right
             ]
         else:
             index = max(0, self.pos_motion - self.delete_left)
             s = self.readline.l_buffer.line_buffer[
-                index: self.readline.l_buffer.point + self.delete_right
+                index : self.readline.l_buffer.point + self.delete_right
             ]
         self.readline._vi_yank_buffer = s
 
@@ -995,15 +951,14 @@ class ViCommand:
         #         return
         if self.pos_motion > self.readline.l_buffer.point:
             del self.readline.l_buffer.line_buffer[
-                self.readline.l_buffer.point: self.pos_motion + self.delete_right
+                self.readline.l_buffer.point : self.pos_motion + self.delete_right
             ]
             if self.readline.l_buffer.point > len(self.readline.l_buffer.line_buffer):
-                self.readline.l_buffer.point = len(
-                    self.readline.l_buffer.line_buffer)
+                self.readline.l_buffer.point = len(self.readline.l_buffer.line_buffer)
         else:
             index = max(0, self.pos_motion - self.delete_left)
             del self.readline.l_buffer.line_buffer[
-                index: self.readline.l_buffer.point + self.delete_right
+                index : self.readline.l_buffer.point + self.delete_right
             ]
             self.readline.l_buffer.point = index
 
@@ -1077,7 +1032,7 @@ class ViExternalEditor:
         return tempfile.mktemp(prefix="readline-", suffix=".py")
 
     def file_open(self, filename, mode):
-        return open(filename, mode)
+        return file(filename, mode)
 
     def file_remove(self, filename):
         os.remove(filename)
@@ -1260,6 +1215,18 @@ def vi_pos_to_char_backward(line, char, index=0, count=1):
     if index >= 0:
         return index + 1
     return index
+
+
+_vi_dct_matching = {
+    "<": (">", +1),
+    ">": ("<", -1),
+    "(": (")", +1),
+    ")": ("(", -1),
+    "[": ("]", +1),
+    "]": ("[", -1),
+    "{": ("}", +1),
+    "}": ("{", -1),
+}
 
 
 def vi_pos_matching(line, index=0):

@@ -1,30 +1,26 @@
 # -*- coding: UTF-8 -*-
 # Copyright (C) 2007 Jörgen Stenarson. <>
 from __future__ import print_function, unicode_literals, absolute_import
-from pyreadline.lineeditor.lineobj import ReadLineTextBuffer
-from pyreadline.lineeditor.history import LineHistory
-from pyreadline.lineeditor import history
-from pyreadline.logger import log
-import pyreadline
 
-import sys
-import unittest
+import sys, unittest
 
 sys.path.append("../..")
-
 # from pyreadline.modes.vi import *
 # from pyreadline import keysyms
+from pyreadline.lineeditor import lineobj
+from pyreadline.lineeditor.history import LineHistory
+import pyreadline.lineeditor.history as history
+
+import pyreadline.logger
+
+pyreadline.logger.sock_silent = False
+from pyreadline.logger import log
+
+# ----------------------------------------------------------------------
 
 
 # ----------------------------------------------------------------------
-# Globals
-# ----------------------------------------------------------------------
-
-# pyreadline.logger.sock_silent = False
-
-global RL
-RL = ReadLineTextBuffer
-l = ReadLineTextBuffer("First Second Third")
+RL = lineobj.ReadLineTextBuffer
 
 
 class Test_prev_next_history(unittest.TestCase):
@@ -148,24 +144,12 @@ class Test_empty_history_search_incr_fwd_backwd(unittest.TestCase):
         self.assertEqual(q.forward_search_history("a"), "")
 
 
-class TestLineHistoryDunderMethods(unittest.TestCase):
-    def setUp(self):
-        self.buf = LineHistory()
+# ----------------------------------------------------------------------
+# utility functions
 
-    def test_index(self):
-        # Does get_history_item say, index starts at 1?
-        # FFS this passed
-        with self.assertRaises(IndexError):
-            self.buf.get_history_item(0)
-
-    def test_adding_only_a_string_to_the_history(self):
-        # like we jump through some acrobatic hoops for seemingly no reason
-        self.buf.add_history("a simple str")
-        self.assertEqual(self.buf.get_history_item(0), "a simple str")
-
-    # def test_len(self):
-    #     self.buf
-
+# ----------------------------------------------------------------------
 
 if __name__ == "__main__":
     unittest.main()
+
+    l = lineobj.ReadLineTextBuffer("First Second Third")

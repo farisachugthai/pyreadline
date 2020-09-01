@@ -1,8 +1,6 @@
 # -*- coding: ISO-8859-1 -*-
 from __future__ import print_function, unicode_literals, absolute_import
-import re
-import sys
-import os
+import re, sys, os
 
 terminal_escape = re.compile("(\001?\033\\[[0-9;]*m\002?)")
 escape_parts = re.compile("\001?\033\\[([0-9;]*)m\002?")
@@ -177,8 +175,7 @@ def write_color_old(text, attr=None):
                     attr = 0
                 elif part == "7":  # switch on reverse
                     attr |= 0x4000
-                # switch on bold (i.e. intensify foreground color)
-                if part == "1":
+                if part == "1":  # switch on bold (i.e. intensify foreground color)
                     attr |= 0x08
                 elif len(part) == 2 and "30" <= part <= "37":  # set foreground color
                     part = int(part) - 30

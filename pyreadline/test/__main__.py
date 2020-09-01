@@ -26,11 +26,11 @@ def main():
         all_test_suites = unittest.defaultTestLoader.discover(start_dir="test")
         suite.addTests(tests=[all_test_suites, dt_suite])
         logging.debug(vars(suite))
-        successful = (TextTestRunner().run(suite).wasSuccessful())
+        successful = TextTestRunner().run(suite).wasSuccessful()
         return 0 if successful else 1
     else:
         pytest.main(plugins=[])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

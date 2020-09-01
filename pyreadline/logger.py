@@ -7,76 +7,31 @@
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
 
-import logging
-import logging.handlers
-import socket
-
+import socket, logging, logging.handlers
 from pyreadline.unicode_helper import ensure_str
 
-
-def init_logger(log_level=logging.DEBUG, propagate=False, fmt_msg=None, date_fmt=None):
-    """Returns the pyreadline_logger used throughout the rest of the repo.
-
-    Parameters
-    ----------
-
-    Returns
-    -------
-    `logging.Logger`.
-
-    """
-    logger = logging.getLogger("PYREADLINE")
-    logger.setLevel(log_level)
-    logger.propagate = propagate
-    if fmt_msg is None:
-        fmt_msg = "%(message)s"
-    if date_fmt is None:
-        datefmt = "%Y-%m-%d %H:%M:%S"
-    formatter = logging.Formatter(fmt_msg, datefmt)
-    handler = logging.StreamHandler()
-    handler.setLevel(level=log_level)
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.addFilter(logging.Filter())
-
-    return logger
+host = "localhost"
+port = logging.handlers.DEFAULT_TCP_LOGGING_PORT
 
 
-# Globals:
+pyreadline_logger = logging.getLogger("PYREADLINE")
+pyreadline_logger.setLevel(logging.DEBUG)
+pyreadline_logger.propagate = False
+formatter = logging.Formatter(str("%(message)s"))
+file_handler = None
 
 
-# TODO the actual version check
-if "NullHandler" not in dir(logging):
-
-    class NullHandler(logging.Handler):
-        def emit(self, s):
-            pass
-
-
-else:
-    from logging import NullHandler
-
-global pyreadline_logger
-
-pyreadline_logger = init_logger(
-    log_level=logging.WARNING,
-    fmt_msg="[ %(funcName)s : %(created)f - %(relativeCreated)d :] %(levelname)s : %(module)s : --- %(message)s ",
-)
-
-# socket_handler = None
-# pyreadline_logger.addHandler(NullHandler())
+class NULLHandler(logging.Handler):
+    def emit(self, s):
+        pass
 
 
 class SocketStream(object):
-    def __init__(self, host=None, port=None):
+    def __init__(self, host, port):
         self.logsocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.host = host if host is not None else "localhost"
-        self.port = (
-            port if port is not None else logging.handlers.DEFAULT_TCP_LOGGING_PORT
-        )
 
     def write(self, s):
-        self.logsocket.sendto(ensure_str(s), (self.host, self.port))
+        self.logsocket.sendto(ensure_str(s), (host, port))
 
     def flush(self):
         pass
@@ -85,30 +40,32 @@ class SocketStream(object):
         pass
 
 
-def start_socket_log(formatter=None, log_level=30):
-    socket_handler = logging.StreamHandler(
-        SocketStream("localhost", logging.handlers.DEFAULT_TCP_LOGGING_PORT)
-    )
-    if formatter is None:
-        formatter = logging.Formatter()
+socket_handler = None
+pyreadline_logger.addHandler(NULLHandler())
+
+
+def start_socket_log():
+    global socket_handler
+    socket_handler = logging.StreamHandler(SocketStream(host, port))
     socket_handler.setFormatter(formatter)
-    socket_handler.setLevel(log_level)
     pyreadline_logger.addHandler(socket_handler)
 
 
-def stop_socket_log(socket_handler):
+def stop_socket_log():
+    global socket_handler
     if socket_handler:
         pyreadline_logger.removeHandler(socket_handler)
         socket_handler = None
 
 
-def start_file_log(filename, log_level=30):
+def start_file_log(filename):
+    global file_handler
     file_handler = logging.FileHandler(filename, "w")
-    file_handler.setLevel(log_level)
     pyreadline_logger.addHandler(file_handler)
 
 
-def stop_file_log(file_handler):
+def stop_file_log():
+    global file_handler
     if file_handler:
         pyreadline_logger.removeHandler(file_handler)
         file_handler.close()
@@ -121,6 +78,6 @@ def stop_logging():
     stop_socket_log()
 
 
-def log(s, log_level=30, exc_info=0):
-    """Log a string. Allow for variable log levels."""
-    pyreadline_logger.log(level=int(log_level), msg=str(s), exc_info=exc_info)
+def log(s):
+    s = ensure_str(s)
+    pyreadline_logger.debug(s)

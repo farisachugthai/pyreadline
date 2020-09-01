@@ -1,6 +1,7 @@
 from __future__ import print_function, unicode_literals, absolute_import
 import sys
 
+success = True
 in_ironpython = "IronPython" in sys.version
 if in_ironpython:
     try:
@@ -16,12 +17,11 @@ else:
 
 
 def send_data(lists):
-    return SetClipboardText(make_tab(lists))
+    SetClipboardText(make_tab(lists))
 
 
 def set_clipboard_text(toclipboard):
-    """Cast toclipboard to a string and pass to SetClipboardText."""
-    return SetClipboardText(str(toclipboard))
+    SetClipboardText(str(toclipboard))
 
 
 def make_tab(lists):
@@ -61,11 +61,9 @@ def make_list_of_list(txt):
 
 
 def get_clipboard_text_and_convert(paste_list=False):
-    """Get txt from clipboard.
-
-    If paste_list==True the convert tab separated data to list of lists.
-    Enclose list of list in array() if all elements are numeric.
-    """
+    """Get txt from clipboard. if paste_list==True the convert tab separated 
+    data to list of lists. Enclose list of list in array() if all elements are 
+    numeric"""
     txt = GetClipboardText()
     if txt:
         if paste_list and "\t" in txt:

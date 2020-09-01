@@ -6,21 +6,16 @@
 #  Distributed under the terms of the BSD License.  The full license is in
 #  the file COPYING, distributed as part of this software.
 # *****************************************************************************
-
 from __future__ import print_function, unicode_literals, absolute_import
 from platform import system
 
-# So unless this is definitely necessary... can we not?
-# Glob imports at the top of packages make things very interconnected
-# and harder to debug
+_S = system()
+if "windows" != _S.lower():
+    raise RuntimeError("pyreadline is for Windows only, not {}.".format(_S))
+del system, _S
 
-# from . import rlmain
-# from .rlmain import *
+from . import unicode_helper
+from . import logger, clipboard, lineeditor, modes, console
+from .rlmain import *
 
-# from . import logger, clipboard, lineeditor, modes, console
-# from . import unicode_helper
-
-# _S = system()
-# if "windows" != _S.lower():
-#     raise RuntimeError("pyreadline is for Windows only, not {}.".format(_S))
-# del system, _S
+from . import rlmain

@@ -24,8 +24,7 @@ class Event(object):
                 self.keyinfo,
             )
         elif self.type in ["Motion", "Button"]:
-            s = "%s x=%d y=%d state=%x" % (
-                self.type, self.x, self.y, self.state)
+            s = "%s x=%d y=%d state=%x" % (self.type, self.x, self.y, self.state)
         elif self.type == "Configure":
             s = "%s w=%d h=%d" % (self.type, self.width, self.height)
         elif self.type in ["FocusIn", "FocusOut"]:

@@ -8,18 +8,16 @@
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
 
-import sys
-import unittest
-
-from pyreadline import logger
-from pyreadline.logger import log
-from pyreadline.test.common import keytext_to_keyinfo_and_event, MockReadline, MockConsole, Tester
-# from pyreadline.lineeditor import lineobj
-# from pyreadline import keysyms
-from pyreadline.modes.emacs import EmacsMode
+import sys, unittest
 
 sys.path.insert(0, "../..")
+from pyreadline.modes.emacs import *
+from pyreadline import keysyms
+from pyreadline.lineeditor import lineobj
 
+from pyreadline.test.common import *
+from pyreadline.logger import log
+import pyreadline.logger as logger
 
 logger.sock_silent = True
 logger.show_event = ["debug"]
@@ -66,8 +64,7 @@ class EmacsModeTest(EmacsMode):
             lst_key = [keytext]
         for key in lst_key:
             keyinfo, event = keytext_to_keyinfo_and_event(key)
-            dispatch_func = self.key_dispatch.get(
-                keyinfo.tuple(), self.self_insert)
+            dispatch_func = self.key_dispatch.get(keyinfo.tuple(), self.self_insert)
             self.tested_commands[dispatch_func.__name__] = dispatch_func
             log("keydisp: %s %s" % (key, dispatch_func.__name__))
             dispatch_func(event)

@@ -7,8 +7,7 @@
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
 
-import re
-import operator
+import re, operator
 
 
 def str_find_all(str, ch):
@@ -80,9 +79,8 @@ def next_start_segment(str, is_segment):
     str = "".join(str)
     result = []
     for start in mark_start_segment_index(str, is_segment):
-        result[len(result): start] = [
-            start for x in range(start - len(result))]
-    result[len(result): len(str)] = [
+        result[len(result) : start] = [start for x in range(start - len(result))]
+    result[len(result) : len(str)] = [
         len(str) for x in range(len(str) - len(result) + 1)
     ]
     return result
@@ -92,9 +90,8 @@ def next_end_segment(str, is_segment):
     str = "".join(str)
     result = []
     for start in mark_end_segment_index(str, is_segment):
-        result[len(result): start] = [
-            start for x in range(start - len(result))]
-    result[len(result): len(str)] = [
+        result[len(result) : start] = [start for x in range(start - len(result))]
+    result[len(result) : len(str)] = [
         len(str) for x in range(len(str) - len(result) + 1)
     ]
     return result
@@ -105,11 +102,9 @@ def prev_start_segment(str, is_segment):
     result = []
     prev = 0
     for start in mark_start_segment_index(str, is_segment):
-        result[len(result): start +
-               1] = [prev for x in range(start - len(result) + 1)]
+        result[len(result) : start + 1] = [prev for x in range(start - len(result) + 1)]
         prev = start
-    result[len(result): len(str)] = [
-        prev for x in range(len(str) - len(result) + 1)]
+    result[len(result) : len(str)] = [prev for x in range(len(str) - len(result) + 1)]
     return result
 
 
@@ -118,10 +113,9 @@ def prev_end_segment(str, is_segment):
     result = []
     prev = 0
     for start in mark_end_segment_index(str, is_segment):
-        result[len(result): start +
-               1] = [prev for x in range(start - len(result) + 1)]
+        result[len(result) : start + 1] = [prev for x in range(start - len(result) + 1)]
         prev = start
-    result[len(result): len(str)] = [
+    result[len(result) : len(str)] = [
         len(str) for x in range(len(str) - len(result) + 1)
     ]
     return result

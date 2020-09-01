@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-"""Define the NotEmacs mode."""
-
 # *****************************************************************************
 #       Copyright (C) 2003-2006 Gary Bishop.
 #       Copyright (C) 2006  Jorgen Stenarson. <jorgen.stenarson@bostream.nu>
@@ -8,20 +6,13 @@
 #  Distributed under the terms of the BSD License.  The full license is in
 #  the file COPYING, distributed as part of this software.
 # *****************************************************************************
-
 from __future__ import print_function, unicode_literals, absolute_import
-
-import re
-import string
-import traceback
-
-from pyreadline import clipboard
-from pyreadline.lineeditor import lineobj
+import os
+import pyreadline.logger as logger
 from pyreadline.logger import log
-from pyreadline.modes import basemode
-
-
-# by the way. what the hell is notemacs mode?
+import pyreadline.lineeditor.lineobj as lineobj
+import pyreadline.lineeditor.history as history
+from . import basemode
 
 
 class NotEmacsMode(basemode.BaseMode):
@@ -48,8 +39,7 @@ class NotEmacsMode(basemode.BaseMode):
                 if lineobj.EndOfLine(self.l_buffer) == 0:
                     raise EOFError
 
-            dispatch_func = self.key_dispatch.get(
-                event.keyinfo, self.self_insert)
+            dispatch_func = self.key_dispatch.get(event.keyinfo, self.self_insert)
             log("readline from keyboard:%s" % (event.keyinfo,))
             r = None
             if dispatch_func:
@@ -62,11 +52,7 @@ class NotEmacsMode(basemode.BaseMode):
                 break
 
     def readline(self, prompt=""):
-        """Prompt the user for a line of text.
-
-        Clear the console as necessary, redraw according to user actions
-        and report exceptions as they're raised.
-        """
+        """Try to act like GNU readline."""
         # handle startup_hook
         if self.first_prompt:
             self.first_prompt = False
@@ -92,8 +78,7 @@ class NotEmacsMode(basemode.BaseMode):
 
         log("in readline: %s" % self.paste_line_buffer)
         if len(self.paste_line_buffer) > 0:
-            self.l_buffer = lineobj.ReadlineTextBuffer(
-                self.paste_line_buffer[0])
+            self.l_buffer = lineobj.ReadlineTextBuffer(self.paste_line_buffer[0])
             self._update_line()
             self.paste_line_buffer = self.paste_line_buffer[1:]
             c.write("\r\n")
@@ -106,7 +91,7 @@ class NotEmacsMode(basemode.BaseMode):
         log("returning(%s)" % self.l_buffer.get_line_text())
         return self.l_buffer.get_line_text() + "\n"
 
-    # Methods below here are bindable emacs functions
+    ### Methods below here are bindable emacs functions
 
     def beginning_of_line(self, e):  # (C-a)
         """Move to the start of the current line. """
@@ -135,7 +120,8 @@ class NotEmacsMode(basemode.BaseMode):
         self.l_buffer.backward_word()
 
     def clear_screen(self, e):  # (C-l)
-        """Redraw the current line leaving the cursor at the top of the screen."""
+        """Clear the screen and redraw the current line, leaving the current
+        line at the top of the screen."""
         self.console.page()
 
     def redraw_current_line(self, e):  # ()
@@ -143,22 +129,19 @@ class NotEmacsMode(basemode.BaseMode):
         pass
 
     def accept_line(self, e):  # (Newline or Return)
-        """Accept the line regardless of where the cursor is.
-
-        If this line is non-empty, it may be added to the history list for
-        future recall with `add_history`.
-        If this line is a modified history line, the history line is restored
-        to its original state.
-        """
+        """Accept the line regardless of where the cursor is. If this line
+        is non-empty, it may be added to the history list for future recall
+        with add_history(). If this line is a modified history line, the
+        history line is restored to its original state."""
         return True
 
-    # History commands
+    #########  History commands
     def previous_history(self, e):  # (C-p)
-        """Move back through the history list, fetching the previous command."""
+        """Move back through the history list, fetching the previous command. """
         self._history.previous_history(self.l_buffer)
 
     def next_history(self, e):  # (C-n)
-        """Move forward through the history list, fetching the next command."""
+        """Move forward through the history list, fetching the next command. """
         self._history.next_history(self.l_buffer)
 
     def beginning_of_history(self, e):  # (M-<)
@@ -166,7 +149,8 @@ class NotEmacsMode(basemode.BaseMode):
         self._history.beginning_of_history()
 
     def end_of_history(self, e):  # (M->)
-        """Move to the end of the input history."""
+        """Move to the end of the input history, i.e., the line currently
+        being entered."""
         self._history.end_of_history(self.l_buffer)
 
     def _i_search(self, searchfun, direction, init_event):
@@ -215,13 +199,15 @@ class NotEmacsMode(basemode.BaseMode):
         self._history.history_cursor = len(self._history.history)
 
     def reverse_search_history(self, e):  # (C-r)
-        """Search backward for 'e'. This is an incremental search."""
+        """Search backward starting at the current line and moving up
+        through the history as necessary. This is an incremental search."""
         #        print("HEJ")
         #        self.console.bell()
         self._i_search(self._history.reverse_search_history, -1, e)
 
     def forward_search_history(self, e):  # (C-s)
-        """Search forward for 'e'. This is an incremental search."""
+        """Search forward starting at the current line and moving down
+        through the the history as necessary. This is an incremental search."""
         #        print("HEJ")
         #        self.console.bell()
         self._i_search(self._history.forward_search_history, 1, e)
@@ -419,7 +405,7 @@ class NotEmacsMode(basemode.BaseMode):
 
     def paste_mulitline_code(self, e):
         """Paste windows clipboard"""
-        reg = re.compile(r"\r?\n")
+        reg = re.compile("\r?\n")
         if self.enable_win32_clipboard:
             txt = clipboard.get_clipboard_text_and_convert(False)
             t = reg.split(txt)
@@ -434,8 +420,8 @@ class NotEmacsMode(basemode.BaseMode):
                 return False
 
     def ipython_paste(self, e):
-        """Paste windows clipboard. If enable_ipython_paste_list_of_lists is
-        True then try to convert tabseparated data to repr of list of lists or
+        """Paste windows clipboard. If enable_ipython_paste_list_of_lists is 
+        True then try to convert tabseparated data to repr of list of lists or 
         repr of array"""
         if self.enable_win32_clipboard:
             txt = clipboard.get_clipboard_text_and_convert(
@@ -551,32 +537,27 @@ class NotEmacsMode(basemode.BaseMode):
         pass
 
     def insert_comment(self, e):  # (M-#)
-        """Comment out the current line. :kbd:`Alt-#`.
-
-        Without a numeric argument, the value of the comment-begin
+        """Without a numeric argument, the value of the comment-begin
         variable is inserted at the beginning of the current line. If a
         numeric argument is supplied, this command acts as a toggle: if the
         characters at the beginning of the line do not match the value of
         comment-begin, the value is inserted, otherwise the characters in
         comment-begin are deleted from the beginning of the line. In either
-        case, the line is accepted as if a newline had been typed.
-        """
+        case, the line is accepted as if a newline had been typed."""
         pass
 
     def dump_functions(self, e):  # ()
         """Print all of the functions and their key bindings to the Readline
         output stream. If a numeric argument is supplied, the output is
         formatted in such a way that it can be made part of an inputrc
-        file. This command is unbound by default.
-        """
+        file. This command is unbound by default."""
         pass
 
     def dump_variables(self, e):  # ()
         """Print all of the settable variables and their values to the
         Readline output stream. If a numeric argument is supplied, the
         output is formatted in such a way that it can be made part of an
-        inputrc file. This command is unbound by default.
-        """
+        inputrc file. This command is unbound by default."""
         pass
 
     def dump_macros(self, e):  # ()

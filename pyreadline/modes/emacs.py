@@ -7,9 +7,7 @@
 #  the file COPYING, distributed as part of this software.
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
-import os
-import sys
-import time
+import os, sys, time
 import pyreadline.logger as logger
 from pyreadline.logger import log
 from pyreadline.lineeditor.lineobj import Point
@@ -17,10 +15,6 @@ import pyreadline.lineeditor.lineobj as lineobj
 import pyreadline.lineeditor.history as history
 from . import basemode
 from pyreadline.unicode_helper import ensure_unicode
-
-
-class LeaveModeTryNext(Exception):
-    pass
 
 
 def format(keyinfo):
@@ -111,8 +105,7 @@ class IncrementalSearchPromptMode(object):
         else:
             self.subsearch_prompt = "forward-i-search%d`%s': "
 
-        self.prompt = self.subsearch_prompt % (
-            self._history.history_cursor, "")
+        self.prompt = self.subsearch_prompt % (self._history.history_cursor, "")
 
         if self.subsearch_query:
             self.line = self._process_incremental_search_keyevent(init_event)
@@ -176,6 +169,10 @@ class SearchPromptMode(object):
         through the the history as necessary using a non-incremental search
         for a string supplied by the user."""
         return self._init_non_i_search(1)
+
+
+class LeaveModeTryNext(Exception):
+    pass
 
 
 class DigitArgumentMode(object):
@@ -301,7 +298,7 @@ class EmacsMode(
         self.previous_func = dispatch_func
         return r
 
-    # History commands
+    #########  History commands
     def previous_history(self, e):  # (C-p)
         """Move back through the history list, fetching the previous
         command. """
@@ -608,28 +605,20 @@ class EmacsMode(
 
     def dump_macros(self, e):  # ()
         """Print all of the Readline key sequences bound to macros and the
-        strings they output.
-
-        If a numeric argument is supplied, the output is formatted in such a way
-        that it can be made part of an inputrc file.
-
-        This command is unbound by default.
-        """
+        strings they output. If a numeric argument is supplied, the output
+        is formatted in such a way that it can be made part of an inputrc
+        file. This command is unbound by default."""
         self.finalize()
 
     def digit_argument(self, e):  # (M-0, M-1, ... M--)
         """Add this digit to the argument already accumulating, or start a
-        new argument.
-
-        M-- starts a negative argument.
-        """
+        new argument. M-- starts a negative argument."""
         self._init_digit_argument(e)
         # Should not finalize
 
     def universal_argument(self, e):  # ()
-        """This is another way to specify an argument.
-
-        If this command is followed by one or more digits, optionally with a leading minus
+        """This is another way to specify an argument. If this command is
+        followed by one or more digits, optionally with a leading minus
         sign, those digits define the argument. If the command is followed
         by digits, executing universal-argument again ends the numeric
         argument, but is otherwise ignored. As a special case, if this
@@ -637,15 +626,14 @@ class EmacsMode(
         digit or minus sign, the argument count for the next command is
         multiplied by four. The argument count is initially one, so
         executing this function the first time makes the argument count
-        four, a second time makes the argument count sixteen, and so on.
-
-        By default, this is not bound to a key.
-        """
-        pass
+        four, a second time makes the argument count sixteen, and so on. By
+        default, this is not bound to a key."""
         # Should not finalize
 
+    # Create key bindings:
     def init_editing_mode(self, e):  # (C-e)
-        """Create key bindings."""
+        """When in vi command mode, this causes a switch to emacs editing
+        mode."""
         self._bind_exit_key("Control-d")
         self._bind_exit_key("Control-z")
 
@@ -702,10 +690,8 @@ class EmacsMode(
         self._bind_key("Control-Left", self.backward_word)
         self._bind_key("Shift-Right", self.forward_char_extend_selection)
         self._bind_key("Shift-Left", self.backward_char_extend_selection)
-        self._bind_key("Shift-Control-Right",
-                       self.forward_word_end_extend_selection)
-        self._bind_key("Shift-Control-Left",
-                       self.backward_word_extend_selection)
+        self._bind_key("Shift-Control-Right", self.forward_word_end_extend_selection)
+        self._bind_key("Shift-Control-Left", self.backward_word_extend_selection)
         self._bind_key("Shift-Home", self.beginning_of_line_extend_selection)
         self._bind_key("Shift-End", self.end_of_line_extend_selection)
         self._bind_key("numpad0", self.self_insert)

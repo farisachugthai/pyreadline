@@ -7,22 +7,17 @@
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
 
-import sys
-import unittest
-
-from pyreadline.py3k_compat import StringIO
-# from pyreadline.test.common import *
-from pyreadline.logger import log
-from pyreadline.lineeditor import lineobj
-from pyreadline import keysyms
-from pyreadline.modes.vi import (
-    ViMode, vi_pos_matching, vi_pos_word_long, vi_pos_find_char_backward,
-    vi_pos_find_char_forward, vi_pos_end_short, vi_pos_back_long, vi_pos_back_short
-    vi_pos_to_char_forward, vi_pos_to_char_backward
-)
-# from pyreadline.modes.vi import *
+import sys, unittest
 
 sys.path.insert(0, "../..")
+from pyreadline.modes.vi import *
+from pyreadline import keysyms
+from pyreadline.lineeditor import lineobj
+from pyreadline.logger import log
+import pyreadline.logger as logger
+from pyreadline.test.common import *
+
+from pyreadline.py3k_compat import StringIO
 
 # ----------------------------------------------------------------------
 
@@ -31,7 +26,7 @@ class ViModeTest(ViMode):
     tested_commands = {}
 
     def __init__(self):
-        super().__init__(self, MockReadline())
+        ViMode.__init__(self, MockReadline())
         self.mock_console = MockConsole()
         self.init_editing_mode(None)
         self.vi_set_insert_mode(True)
@@ -302,10 +297,8 @@ class Tests(unittest.TestCase):
         self.assertEqual(8, vi_pos_back_short("abc  def... u", 11))
         self.assertEqual(5, vi_pos_back_short("abc  def... u", 8))
         self.assertEqual(0, vi_pos_back_short("abc  def... u", 5))
-        self.assertEqual(11, vi_pos_back_short(
-            "abc def... ghi...", 16, count=2))
-        self.assertEqual(0, vi_pos_back_short(
-            "abc def... ghi...", 11, count=3))
+        self.assertEqual(11, vi_pos_back_short("abc def... ghi...", 16, count=2))
+        self.assertEqual(0, vi_pos_back_short("abc def... ghi...", 11, count=3))
 
     def test_pos_back_long(self):
         self.assertEqual(0, vi_pos_back_long(""))
@@ -327,8 +320,7 @@ class Tests(unittest.TestCase):
         self.assertEqual(4, vi_pos_find_char_forward("abc def", "d", 3))
         self.assertEqual(-1, vi_pos_find_char_forward("abc def", "d", 4))
         self.assertEqual(-1, vi_pos_find_char_forward("abc def", "d", count=2))
-        self.assertEqual(12, vi_pos_find_char_forward(
-            "abc def abc def", "d", count=2))
+        self.assertEqual(12, vi_pos_find_char_forward("abc def abc def", "d", count=2))
 
     def test_pos_find_char_backward(self):
         self.assertEqual(-1, vi_pos_find_char_backward("", "x"))
@@ -336,8 +328,7 @@ class Tests(unittest.TestCase):
         self.assertEqual(4, vi_pos_find_char_backward("abc def", "d", 6))
         self.assertEqual(4, vi_pos_find_char_backward("abc def", "d", 5))
         self.assertEqual(-1, vi_pos_find_char_backward("abc def", "d", 4))
-        self.assertEqual(-1,
-                         vi_pos_find_char_backward("abc def", "d", 6, count=2))
+        self.assertEqual(-1, vi_pos_find_char_backward("abc def", "d", 6, count=2))
         self.assertEqual(
             4, vi_pos_find_char_backward("abc def abc def", "d", 14, count=2)
         )
@@ -349,8 +340,7 @@ class Tests(unittest.TestCase):
         self.assertEqual(3, vi_pos_to_char_forward("abc def", "d", 2))
         self.assertEqual(-1, vi_pos_to_char_forward("abc def", "d", 4))
         self.assertEqual(-1, vi_pos_to_char_forward("abc def", "d", count=2))
-        self.assertEqual(11, vi_pos_to_char_forward(
-            "abc def abc def", "d", count=2))
+        self.assertEqual(11, vi_pos_to_char_forward("abc def abc def", "d", count=2))
 
     def test_pos_to_char_backward(self):
         self.assertEqual(-1, vi_pos_to_char_backward("", "x"))
@@ -358,8 +348,7 @@ class Tests(unittest.TestCase):
         self.assertEqual(5, vi_pos_to_char_backward("abc def", "d", 6))
         self.assertEqual(5, vi_pos_to_char_backward("abc def", "d", 5))
         self.assertEqual(-1, vi_pos_to_char_backward("abc def", "d", 4))
-        self.assertEqual(-1, vi_pos_to_char_backward("abc def",
-                                                     "d", 6, count=2))
+        self.assertEqual(-1, vi_pos_to_char_backward("abc def", "d", 6, count=2))
         self.assertEqual(
             5, vi_pos_to_char_backward("abc def abc def", "d", 14, count=2)
         )

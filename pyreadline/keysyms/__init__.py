@@ -1,10 +1,10 @@
 from __future__ import print_function, unicode_literals, absolute_import
 
-from . import winconstants
 import sys
 
 success = False
 in_ironpython = "IronPython" in sys.version
+from . import winconstants
 
 if in_ironpython:
     try:

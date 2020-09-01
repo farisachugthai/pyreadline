@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-"""An attempt to implement readline for Python in Python using ctypes."""
 # *****************************************************************************
 #       Copyright (C) 2003-2006 Gary Bishop.
 #       Copyright (C) 2006  Jorgen Stenarson. <jorgen.stenarson@bostream.nu>
@@ -9,110 +8,78 @@
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
 
-import abc
-import logging
-import os
-import re
-import sys
-import time
+""" an attempt to implement readline for Python in Python using ctypes"""
+import sys, os, re, time
 from glob import glob
 
-from pyreadline.lineeditor import lineobj
-from pyreadline.lineeditor import history
-from pyreadline import clipboard, logger
-from pyreadline.console.console import Console
+from . import release
+from .py3k_compat import callable, execfile
+
+import pyreadline.lineeditor.lineobj as lineobj
+import pyreadline.lineeditor.history as history
+import pyreadline.clipboard as clipboard
+import pyreadline.console as console
+import pyreadline.logger as logger
 
 from pyreadline.keysyms.common import make_KeyPress_from_keydescr
 from pyreadline.unicode_helper import ensure_unicode, ensure_str
-from pyreadline.logger import log
-from pyreadline.modes import editingmodes
-from pyreadline.error import ReadlineError, GetSetError, MockConsoleError
+from .logger import log
+from .modes import editingmodes
+from .error import ReadlineError, GetSetError
 
-# from pyreadline import release
-from pyreadline.py3k_compat import callable, execfile
+in_ironpython = "IronPython" in sys.version
+if in_ironpython:  # ironpython does not provide a prompt string to readline
+    import System
+
+    default_prompt = ">>> "
+else:
+    default_prompt = ""
 
 
-# in_ironpython = "IronPython" in sys.version
-# if in_ironpython:  # ironpython does not provide a prompt string to readline
-#     # we never use this import though?
-#     import System
-
-# or this global?
-#     default_prompt = ">>> "
-# else:
-#     default_prompt = ""
+class MockConsoleError(Exception):
+    pass
 
 
 class MockConsole(object):
-    """Object used during refactoring.
-
-    Should raise errors when someone tries to use it.
+    """object used during refactoring. Should raise errors when someone tries to use it.
     """
 
     def __setattr__(self, x):
-        raise MockConsoleError(
-            "Should not try to get attributes from MockConsole")
+        raise MockConsoleError("Should not try to get attributes from MockConsole")
 
     def cursor(self, size=50):
         pass
 
 
-class BaseReadlineABC(abc.ABC):
-    """Standard readline library call, not available for all implementations."""
+class BaseReadline(object):
+    def __init__(self):
+        self.allow_ctrl_c = False
+        self.ctrl_c_tap_time_interval = 0.3
 
-    @abc.abstractmethod
-    def readline(self, prompt=""):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def redisplay(self):
-        raise NotImplementedError
-
-    @abc.abstractproperty
-    def console(self):
-        return MockConsole()
-
-
-class BaseReadline(BaseReadlineABC):
-    def __init__(
-        self,
-        allow_ctrl_c=False,
-        ctrl_c_tap_time_interval=0.3,
-        debug=False,
-        callback=None,
-        bell_style="none",
-        mark=-1,
-    ):
-        self.allow_ctrl_c = allow_ctrl_c
-        self.ctrl_c_tap_time_interval = ctrl_c_tap_time_interval
-        self.debug = debug
-        self.bell_style = bell_style
-        self.mark = mark
-        self.callback = callback
+        self.debug = False
+        self.bell_style = "none"
+        self.mark = -1
+        self.console = MockConsole()
         self.disable_readline = False
         # this code needs to follow l_buffer and history creation
         self.editingmodes = [mode(self) for mode in editingmodes]
-
-        # We initialize every editing mode? Even if we don't use it?
-        # yeah we should most definitely call this in the subclasses fuck this
         for mode in self.editingmodes:
-            log(mode, 0)
             mode.init_editing_mode(None)
         self.mode = self.editingmodes[0]
 
-    @property
-    def console(self):
-        return Console()
+        self.read_inputrc()
+        log("\n".join(self.mode.rl_settings_to_string()))
+
+        self.callback = None
 
     def parse_and_bind(self, string):
         """Parse and execute single line of a readline init file."""
-        log('parse_and_bind("%s")' % string, logging.DEBUG)
-        if string.startswith("#"):
-            return
         try:
+            log('parse_and_bind("%s")' % string)
+            if string.startswith("#"):
+                return
             if string.startswith("set"):
-                m = re.compile(
-                    r"set\s+([-a-zA-Z0-9]+)\s+(.+)\s*$").match(string)
+                m = re.compile(r"set\s+([-a-zA-Z0-9]+)\s+(.+)\s*$").match(string)
                 if m:
                     var_name = m.group(1)
                     val = m.group(2)
@@ -139,17 +106,17 @@ class BaseReadline(BaseReadlineABC):
                         )
                     return
                 self.mode._bind_key(key, func)
-        except Exception:
+        except:
             log("error")
             raise
 
-    @property
-    def prompt(self):
-        return self.mode.prompt
-
-    @prompt.setter
     def _set_prompt(self, prompt):
         self.mode.prompt = prompt
+
+    def _get_prompt(self):
+        return self.mode.prompt
+
+    prompt = property(_get_prompt, _set_prompt)
 
     def get_line_buffer(self):
         """Return the current contents of the line buffer."""
@@ -171,7 +138,7 @@ class BaseReadline(BaseReadlineABC):
 
     def get_current_history_length(self):
         """Return the number of lines currently in the history.
-        (This is different from get_history_length(), which returns
+        (This is different from get_history_length(), which returns 
         the maximum number of lines that will be written to a history file.)"""
         return self.mode._history.get_current_history_length()
 
@@ -224,7 +191,7 @@ class BaseReadline(BaseReadlineABC):
         self.mode.completer = function
 
     def get_completer(self):
-        """Get the completer function.
+        """Get the completer function. 
         """
         log("get_completer")
         return self.mode.completer
@@ -277,6 +244,13 @@ class BaseReadline(BaseReadlineABC):
         pass
 
     #
+    # Standard call, not available for all implementations
+    #
+
+    def readline(self, prompt=""):
+        raise NotImplementedError
+
+    #
     # Callback interface
     #
     def process_keyevent(self, keyinfo):
@@ -310,8 +284,102 @@ class BaseReadline(BaseReadlineABC):
             # TADA:
             self.callback(line)
 
-    def _color_trtable(self):
-        return {
+    def read_inputrc(
+        self,  # in 2.4 we cannot call expanduser with unicode string
+        inputrcpath=os.path.expanduser(ensure_str("~/pyreadlineconfig.ini")),
+    ):
+        modes = dict([(x.mode, x) for x in self.editingmodes])
+        mode = self.editingmodes[0].mode
+
+        def setmode(name):
+            self.mode = modes[name]
+
+        def bind_key(key, name):
+            import types
+
+            if callable(name):
+                modes[mode]._bind_key(key, types.MethodType(name, modes[mode]))
+            elif hasattr(modes[mode], name):
+                modes[mode]._bind_key(key, getattr(modes[mode], name))
+            else:
+                print("Trying to bind unknown command '%s' to key '%s'" % (name, key))
+
+        def un_bind_key(key):
+            keyinfo = make_KeyPress_from_keydescr(key).tuple()
+            if keyinfo in modes[mode].key_dispatch:
+                del modes[mode].key_dispatch[keyinfo]
+
+        def bind_exit_key(key):
+            modes[mode]._bind_exit_key(key)
+
+        def un_bind_exit_key(key):
+            keyinfo = make_KeyPress_from_keydescr(key).tuple()
+            if keyinfo in modes[mode].exit_dispatch:
+                del modes[mode].exit_dispatch[keyinfo]
+
+        def setkill_ring_to_clipboard(killring):
+            import pyreadline.lineeditor.lineobj
+
+            pyreadline.lineeditor.lineobj.kill_ring_to_clipboard = killring
+
+        def sethistoryfilename(filename):
+            self.mode._history.history_filename = os.path.expanduser(
+                ensure_str(filename)
+            )
+
+        def setbellstyle(mode):
+            self.bell_style = mode
+
+        def disable_readline(mode):
+            self.disable_readline = mode
+
+        def sethistorylength(length):
+            self.mode._history.history_length = int(length)
+
+        def allow_ctrl_c(mode):
+            log("allow_ctrl_c:%s:%s" % (self.allow_ctrl_c, mode))
+            self.allow_ctrl_c = mode
+
+        def setbellstyle(mode):
+            self.bell_style = mode
+
+        def show_all_if_ambiguous(mode):
+            self.mode.show_all_if_ambiguous = mode
+
+        def ctrl_c_tap_time_interval(mode):
+            self.ctrl_c_tap_time_interval = mode
+
+        def mark_directories(mode):
+            self.mode.mark_directories = mode
+
+        def completer_delims(delims):
+            self.mode.completer_delims = delims
+
+        def complete_filesystem(delims):
+            self.mode.complete_filesystem = delims.lower()
+
+        def enable_ipython_paste_for_paths(boolean):
+            self.mode.enable_ipython_paste_for_paths = boolean
+
+        def debug_output(
+            on, filename="pyreadline_debug_log.txt"
+        ):  # Not implemented yet
+            if on in ["on", "on_nologfile"]:
+                self.debug = True
+
+            if on == "on":
+                logger.start_file_log(filename)
+                logger.start_socket_log()
+                logger.log("STARTING LOG")
+            elif on == "on_nologfile":
+                logger.start_socket_log()
+                logger.log("STARTING LOG")
+            else:
+                logger.log("STOPING LOG")
+                logger.stop_file_log()
+                logger.stop_socket_log()
+
+        _color_trtable = {
             "black": 0,
             "darkred": 4,
             "darkgreen": 2,
@@ -329,204 +397,76 @@ class BaseReadline(BaseReadlineABC):
             "white": 7 + 8,
         }
 
-    def bind_key(self, key, name):
-        import types
+        def set_prompt_color(color):
+            self.prompt_color = self._color_trtable.get(color.lower(), 7)
 
-        if callable(name):
-            self.mode._bind_key(key, types.MethodType(name, self.mode))
-        elif hasattr(self.mode.name):
-            self.mode._bind_key(key, getattr(self.mode, name))
-        else:
-            print("Trying to bind unknown command '%s' to key '%s'" % (name, key))
-
-    def un_bind_key(self, key):
-        keyinfo = make_KeyPress_from_keydescr(key).tuple()
-        if keyinfo in self.mode.key_dispatch:
-            del self.mode.key_dispatch[keyinfo]
-
-    def bind_exit_key(self, key):
-        self.mode._bind_exit_key(key)
-
-    def un_bind_exit_key(self, key):
-        keyinfo = make_KeyPress_from_keydescr(key).tuple()
-        if keyinfo in self.mode.exit_dispatch:
-            del self.mode.exit_dispatch[keyinfo]
-
-    def set_prompt_color(self, color):
-        self.prompt_color = self._color_trtable.get(color.lower(), 7)
-
-    def set_input_color(self, color):
-        self.command_color = self._color_trtable.get(color.lower(), 7)
-
-    # def setmode(self, name):
-    # Womp. I may have fucked this quite critical method up a little
-    # self.mode = name
-
-    def setkill_ring_to_clipboard(self, killring):
-        import pyreadline.lineeditor.lineobj
-
-        pyreadline.lineeditor.lineobj.kill_ring_to_clipboard = killring
-
-    def sethistoryfilename(self, filename):
-        self.mode._history.history_filename = os.path.expanduser(
-            ensure_str(filename))
-
-    def setbellstyle(self, mode):
-        self.bell_style = mode
-
-    def disable_readline(self, mode):
-        self.disable_readline = mode
-
-    def sethistorylength(self, length):
-        self.mode._history.history_length = int(length)
-
-    def allow_ctrl_c(self, mode):
-        log("allow_ctrl_c:%s:%s" % (self.allow_ctrl_c, mode))
-        self.allow_ctrl_c = mode
-
-    def setbellstyle(self, mode):
-        self.bell_style = mode
-
-    def show_all_if_ambiguous(self, mode):
-        self.mode.show_all_if_ambiguous = mode
-
-    def ctrl_c_tap_time_interval(self, mode):
-        self.ctrl_c_tap_time_interval = mode
-
-    def mark_directories(self, mode):
-        self.mode.mark_directories = mode
-
-    def completer_delims(self, delims):
-        self.mode.completer_delims = delims
-
-    def complete_filesystem(self, delims):
-        self.mode.complete_filesystem = delims.lower()
-
-    def enable_ipython_paste_for_paths(self, boolean):
-        self.mode.enable_ipython_paste_for_paths = boolean
-
-    def debug_output(self, on, filename="pyreadline_debug_log.txt"):
-        """Initialize the loggers used through the repository.
-
-        Parameters
-        ----------
-        on : str
-            One of 'on' or 'on_nologfile'. If is any other value, the
-            global logger instance will be stopped.
-        filename : str (pathlike)
-            Path of the logfile
-
-        """
-        if on in ["on", "on_nologfile"]:
-            self.debug = True
-
-        if on == "on":
-            logger.start_file_log(filename)
-            logger.start_socket_log()
-            logger.log("STARTING LOG")
-        elif on == "on_nologfile":
-            logger.start_socket_log()
-            logger.log("STARTING LOG")
-        else:
-            logger.log("STOPING LOG")
-            logger.stop_file_log()
-            logger.stop_socket_log()
-
-    def read_inputrc(self, inputrcpath=None):
-        """In this method we `exec` `compile` the inputrc.
-
-        As a result, it's a bit meaningless that it's an ini file.
-        It's treated as a python file.
-
-        The context it's executed in is in all the methods of this class.
-        """
-        if inputrcpath is None:
-            inputrcpath = os.path.expanduser(
-                ensure_str("~/pyreadlineconfig.ini"))
+        def set_input_color(color):
+            self.command_color = self._color_trtable.get(color.lower(), 7)
 
         loc = {
-            # "branch": release.branch,
-            # "version": release.version,
-            "mode": self.editingmodes[0].mode,
-            "modes": dict([(x.mode, x) for x in self.editingmodes]),
-            "set_mode": self.setmode,
-            "bind_key": self.bind_key,
-            "disable_readline": self.disable_readline,
-            "bind_exit_key": self.bind_exit_key,
-            "un_bind_key": self.un_bind_key,
-            "un_bind_exit_key": self.un_bind_exit_key,
-            "bell_style": self.setbellstyle,
-            "mark_directories": self.mark_directories,
-            "show_all_if_ambiguous": self.show_all_if_ambiguous,
-            "completer_delims": self.completer_delims,
-            "complete_filesystem": self.complete_filesystem,
+            "branch": release.branch,
+            "version": release.version,
+            "mode": mode,
+            "modes": modes,
+            "set_mode": setmode,
+            "bind_key": bind_key,
+            "disable_readline": disable_readline,
+            "bind_exit_key": bind_exit_key,
+            "un_bind_key": un_bind_key,
+            "un_bind_exit_key": un_bind_exit_key,
+            "bell_style": setbellstyle,
+            "mark_directories": mark_directories,
+            "show_all_if_ambiguous": show_all_if_ambiguous,
+            "completer_delims": completer_delims,
+            "complete_filesystem": complete_filesystem,
             "debug_output": debug_output,
-            "history_filename": self.sethistoryfilename,
-            "history_length": self.sethistorylength,
-            "set_prompt_color": self.set_prompt_color,
-            "set_input_color": self.set_input_color,
-            "allow_ctrl_c": self.allow_ctrl_c,
-            "ctrl_c_tap_time_interval": self.ctrl_c_tap_time_interval,
-            "kill_ring_to_clipboard": self.setkill_ring_to_clipboard,
-            "enable_ipython_paste_for_paths": self.enable_ipython_paste_for_paths,
+            "history_filename": sethistoryfilename,
+            "history_length": sethistorylength,
+            "set_prompt_color": set_prompt_color,
+            "set_input_color": set_input_color,
+            "allow_ctrl_c": allow_ctrl_c,
+            "ctrl_c_tap_time_interval": ctrl_c_tap_time_interval,
+            "kill_ring_to_clipboard": setkill_ring_to_clipboard,
+            "enable_ipython_paste_for_paths": enable_ipython_paste_for_paths,
         }
         if os.path.isfile(inputrcpath):
             try:
                 execfile(inputrcpath, loc, loc)
             except Exception as x:
-                log("Error reading .pyinputrc")
-                log(x)
-                # old line. wtf
-                # filepath, lineno = traceback.extract_tb(sys.exc_traceback)[1][:2]
-                # raise ReadlineError("Error reading .pyinputrc")
                 raise
+                import traceback
 
-    def redisplay(self):
-        """`_update_line`."""
-        self._update_line()
-
-    def readline(self, prompt=""):
-        """Callback that returns after every line is sent by the user.
-
-        Returns
-        -------
-        `get_line_buffer` with a newline after.
-
-        Notes
-        -----
-        Updates 'ctrl_c_timeout'.
-
-        """
-        self.readline_setup(prompt)
-        self.ctrl_c_timeout = time.time()
-        self._readline_from_keyboard()
-        self.console.write("\r\n")
-        line = self.get_line_buffer()
-        if line != "":
-            log("Returning. Line Buffer: (%s) " % line)
-
-        return line + "\n"
+                print("Error reading .pyinputrc", file=sys.stderr)
+                filepath, lineno = traceback.extract_tb(sys.exc_traceback)[1][:2]
+                print("Line: %s in file %s" % (lineno, filepath), file=sys.stderr)
+                print(x, file=sys.stderr)
+                raise ReadlineError("Error reading .pyinputrc")
 
 
 class Readline(BaseReadline):
-    """Main class for readline based on a console."""
+    """Baseclass for readline based on a console
+    """
 
-    def __init__(self, command_color=None, prompt_color=None):
-        super(Readline, self).__init__()
+    def __init__(self):
+        BaseReadline.__init__(self)
+        self.console = console.Console()
         self.selection_color = self.console.saveattr << 4
-        # self.read_inputrc()
-        self.command_color = command_color
-        # So there is a set_prompt_color method so we could make this a property
-        self.prompt_color = prompt_color
+        self.command_color = None
+        self.prompt_color = None
         self.size = self.console.size()
 
+        # variables you can control with parse_and_bind
+
+    #  To export as readline interface
+
+    ##  Internal functions
+
     def _bell(self):
-        """Ring the bell if requested."""
+        """ring the bell if requested."""
         if self.bell_style == "none":
             pass
         elif self.bell_style == "visible":
-            raise NotImplementedError(
-                "Bellstyle visible is not implemented yet.")
+            raise NotImplementedError("Bellstyle visible is not implemented yet.")
         elif self.bell_style == "audible":
             self.console.bell()
         else:
@@ -591,9 +531,10 @@ class Readline(BaseReadline):
             n += 1
 
         self._update_prompt_pos(n)
-        if hasattr(c, "clear_to_end_of_window"):
-            # Work around function for ironpython due to System.Console's lack of FillFunction
-            c.clear_to_end_of_window()
+        if hasattr(
+            c, "clear_to_end_of_window"
+        ):  # Work around function for ironpython due
+            c.clear_to_end_of_window()  # to System.Console's lack of FillFunction
         else:
             self._clear_after()
 
@@ -602,8 +543,8 @@ class Readline(BaseReadline):
         self._set_cursor()
 
     def callback_read_char(self):
-        """Reads a character and notify when a line is received."""
         # Override base to get automatic newline
+        """Reads a character and informs the readline callback interface when a line is received"""
         if self.keyboard_poll():
             line = self.get_line_buffer() + "\n"
             self.console.write("\r\n")
@@ -633,26 +574,33 @@ class Readline(BaseReadline):
 
         c = self.console
 
+        def nop(e):
+            pass
+
         try:
             event = c.getkeypress()
         except KeyboardInterrupt:
             event = self.handle_ctrl_c()
-
         try:
             result = self.mode.process_keyevent(event.keyinfo)
         except EOFError:
-            # logger.stop_logging()
+            logger.stop_logging()
             raise
         self._update_line()
         return result
 
-    def nop(self, e):
-        pass
-
     def readline_setup(self, prompt=""):
-        super(Readline, self).readline_setup(prompt)
+        BaseReadline.readline_setup(self, prompt)
         self._print_prompt()
         self._update_line()
+
+    def readline(self, prompt=""):
+        self.readline_setup(prompt)
+        self.ctrl_c_timeout = time.time()
+        self._readline_from_keyboard()
+        self.console.write("\r\n")
+        log("returning(%s)" % self.get_line_buffer())
+        return self.get_line_buffer() + "\n"
 
     def handle_ctrl_c(self):
         from pyreadline.keysyms.common import KeyPress
