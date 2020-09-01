@@ -10,11 +10,20 @@ from __future__ import print_function, unicode_literals, absolute_import
 import logging
 import logging.handlers
 import socket
+from typing import Callable
 
 from pyreadline.unicode_helper import ensure_str
 
+# Was there something called sock_silent that used to be here?
+# Asking from test/test_history
 
-def init_logger(log_level=logging.DEBUG, propagate=False, fmt_msg=None, date_fmt=None):
+
+class CallableLogger(logging.Logger):  # type: Callable
+    def __call__(self, msg, lvl=logging.WARNING, exc_info=0, stack_info=None):
+        return self.log(msg, lvl=lvl, exc_info=exc_info, stack_info=stack_info)
+
+
+def init_logger(log_level: int = logging.DEBUG, propagate: bool = False, fmt_msg: str = None, date_fmt: str = None) -> object:
     """Returns the pyreadline_logger used throughout the rest of the repo.
 
     Parameters
@@ -46,21 +55,12 @@ def init_logger(log_level=logging.DEBUG, propagate=False, fmt_msg=None, date_fmt
 
 
 # TODO the actual version check
-if "NullHandler" not in dir(logging):
+# why did adding a type annotation make this global statement raise an error?
+# global pyreadline_logger
 
-    class NullHandler(logging.Handler):
-        def emit(self, s):
-            pass
-
-
-else:
-    from logging import NullHandler
-
-global pyreadline_logger
-
-pyreadline_logger = init_logger(
+pyreadline_logger: logging.Logger = init_logger(
     log_level=logging.WARNING,
-    fmt_msg="[ %(funcName)s : %(created)f - %(relativeCreated)d :] %(levelname)s : %(module)s : --- %(message)s ",
+    fmt_msg="[ %(funcName)s : %(created)f - %(relativeCreated)d :] %(levelname)s : --- %(message)s ",
 )
 
 # socket_handler = None

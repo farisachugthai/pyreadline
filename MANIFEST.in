@@ -1,3 +1,4 @@
+recursive-include pyreadline
 include pyreadline/configuration/pyreadlineconfig.ini
 
 graft doc

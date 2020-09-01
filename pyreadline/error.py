@@ -22,3 +22,19 @@ class NotAWordError(IndexError):
 
 class MockConsoleError(ReadlineError):
     pass
+
+
+class ConsoleError(MockConsoleError):
+    """Occurs when importing a console.
+
+    See Also
+    --------
+    :mod:`pyreadline.console`
+
+    """
+
+    pass
+
+
+class EscapeHistory(Exception):
+    pass

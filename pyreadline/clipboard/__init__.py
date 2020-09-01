@@ -9,9 +9,12 @@ if in_ironpython:
         from .no_clipboard import GetClipboardText, SetClipboardText
 
 else:
-    try:
-        from .win32_clipboard import GetClipboardText, SetClipboardText
-    except ImportError:
+    if sys.platform.startswith('Win'):
+        try:
+            from .win32_clipboard import GetClipboardText, SetClipboardText
+        except ImportError:
+            from .no_clipboard import GetClipboardText, SetClipboardText
+    else:
         from .no_clipboard import GetClipboardText, SetClipboardText
 
 

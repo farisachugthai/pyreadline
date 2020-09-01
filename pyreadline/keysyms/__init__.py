@@ -1,9 +1,9 @@
 from __future__ import print_function, unicode_literals, absolute_import
 
-from . import winconstants
+import traceback
 import sys
+from . import winconstants  # noqa
 
-success = False
 in_ironpython = "IronPython" in sys.version
 
 if in_ironpython:
@@ -11,15 +11,16 @@ if in_ironpython:
         from .ironpython_keysyms import *
 
         success = True
-    except ImportError as x:
+    except ImportError:
         raise
 else:
-    try:
-        from .keysyms import *
+    if sys.platform.startswith("Win"):
+        try:
+            from .keysyms import *
 
-        success = True
-    except ImportError as x:
-        pass
-
-if not success:
-    raise ImportError("Could not import keysym for local pythonversion", x)
+            success = True
+        except ImportError:
+            # raise ImportError("Could not import: %s" % x)
+            traceback.print_exception(*x)
+    else:
+        sys.exit("This is a Windows only program. Comment me out if you want but...")

@@ -7,16 +7,32 @@
 #  the file COPYING, distributed as part of this software.
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
+
+import logging
 import os
 import sys
 import time
-import pyreadline.logger as logger
-from pyreadline.logger import log
-from pyreadline.lineeditor.lineobj import Point
-import pyreadline.lineeditor.lineobj as lineobj
-import pyreadline.lineeditor.history as history
-from . import basemode
+
+# from pyreadline.logger import log
+from pyreadline.logger import init_logger
+from pyreadline.lineeditor import lineobj
+from pyreadline.lineeditor import history
+from pyreadline.lineeditor.history import LineHistory
+
+# from pyreadline.lineeditor.lineobj import Point
+from pyreadline.lineeditor.lineobj import LinePositioner
+from pyreadline.modes.basemode import BaseMode
 from pyreadline.unicode_helper import ensure_unicode
+
+
+logger = init_logger(
+    log_level=logging.CRITICAL,
+    fmt_msg="[ %(relativeCreated)d :] %(levelname)s : --- %(message)s ",
+)
+
+
+def log(msg=None):
+    return logger.log
 
 
 class LeaveModeTryNext(Exception):
@@ -34,95 +50,10 @@ def format(keyinfo):
 in_ironpython = "IronPython" in sys.version
 
 
-class IncrementalSearchPromptMode(object):
-    def __init__(self, rlobj):
-        pass
-
-    def _process_incremental_search_keyevent(self, keyinfo):
-        log("_process_incremental_search_keyevent")
-        keytuple = keyinfo.tuple()
-        # dispatch_func = self.key_dispatch.get(keytuple, default)
-        revtuples = []
-        fwdtuples = []
-        for ktuple, func in self.key_dispatch.items():
-            if func == self.reverse_search_history:
-                revtuples.append(ktuple)
-            elif func == self.forward_search_history:
-                fwdtuples.append(ktuple)
-
-        log("IncrementalSearchPromptMode %s %s" % (keyinfo, keytuple))
-        if keyinfo.keyname == "backspace":
-            self.subsearch_query = self.subsearch_query[:-1]
-            if len(self.subsearch_query) > 0:
-                self.line = self.subsearch_fun(self.subsearch_query)
-            else:
-                self._bell()
-                self.line = ""  # empty query means no search result
-        elif keyinfo.keyname in ["return", "escape"]:
-            self._bell()
-            self.prompt = self.subsearch_oldprompt
-            self.process_keyevent_queue = self.process_keyevent_queue[:-1]
-            self._history.history_cursor = len(self._history.history)
-            if keyinfo.keyname == "escape":
-                self.l_buffer.set_line(self.subsearch_old_line)
-            return True
-        elif keyinfo.keyname:
-            pass
-        elif keytuple in revtuples:
-            self.subsearch_fun = self._history.reverse_search_history
-            self.subsearch_prompt = "reverse-i-search%d`%s': "
-            self.line = self.subsearch_fun(self.subsearch_query)
-        elif keytuple in fwdtuples:
-            self.subsearch_fun = self._history.forward_search_history
-            self.subsearch_prompt = "forward-i-search%d`%s': "
-            self.line = self.subsearch_fun(self.subsearch_query)
-        elif keyinfo.control == False and keyinfo.meta == False:
-            self.subsearch_query += keyinfo.char
-            self.line = self.subsearch_fun(self.subsearch_query)
-        else:
-            pass
-        self.prompt = self.subsearch_prompt % (
-            self._history.history_cursor,
-            self.subsearch_query,
-        )
-        self.l_buffer.set_line(self.line)
-
-    def _init_incremental_search(self, searchfun, init_event):
-        """Initialize search prompt
-        """
-        log("init_incremental_search")
-        self.subsearch_query = ""
-        self.subsearch_fun = searchfun
-        self.subsearch_old_line = self.l_buffer.get_line_text()
-
-        queue = self.process_keyevent_queue
-        queue.append(self._process_incremental_search_keyevent)
-
-        self.subsearch_oldprompt = self.prompt
-
-        if (
-            self.previous_func != self.reverse_search_history
-            and self.previous_func != self.forward_search_history
-        ):
-            self.subsearch_query = self.l_buffer[0:Point].get_line_text()
-
-        if self.subsearch_fun == self.reverse_search_history:
-            self.subsearch_prompt = "reverse-i-search%d`%s': "
-        else:
-            self.subsearch_prompt = "forward-i-search%d`%s': "
-
-        self.prompt = self.subsearch_prompt % (
-            self._history.history_cursor, "")
-
-        if self.subsearch_query:
-            self.line = self._process_incremental_search_keyevent(init_event)
-        else:
-            self.line = ""
-
-
-class SearchPromptMode(object):
-    def __init__(self, rlobj):
-        pass
+class SearchPromptMode(BaseMode):
+    def __init__(self, rlobj, *args, **kwargs):
+        self.l_buffer = lineobj.ReadLineTextBuffer("")
+        super().__init__(rlobj, *args, **kwargs)
 
     def _process_non_incremental_search_keyevent(self, keyinfo):
         keytuple = keyinfo.tuple()
@@ -178,14 +109,99 @@ class SearchPromptMode(object):
         return self._init_non_i_search(1)
 
 
-class DigitArgumentMode(object):
-    def __init__(self, rlobj):
-        pass
+class IncrementalSearchPromptMode(SearchPromptMode):
+    def __init__(self, rlobj, *args, **kwargs):
 
-    def _process_digit_argument_keyevent(self, keyinfo):
-        log("DigitArgumentMode.keyinfo %s" % keyinfo)
+        self.subsearch_query = ""
+        super().__init__(rlobj, *args, *kwargs)
+
+    def _process_incremental_search_keyevent(self, keyinfo):
+        # log("_process_incremental_search_keyevent")
         keytuple = keyinfo.tuple()
-        log("DigitArgumentMode.keytuple %s %s" % (keyinfo, keytuple))
+        # dispatch_func = self.key_dispatch.get(keytuple, default)
+        revtuples = []
+        fwdtuples = []
+        for ktuple, func in self.key_dispatch.items():
+            if func == self.reverse_search_history:
+                revtuples.append(ktuple)
+            elif func == self.forward_search_history:
+                fwdtuples.append(ktuple)
+
+        # log("IncrementalSearchPromptMode %s %s" % (keyinfo, keytuple))
+        if keyinfo.keyname == "backspace":
+            self.subsearch_query = self.subsearch_query[:-1]
+            if len(self.subsearch_query) > 0:
+                self.line = self.subsearch_fun(self.subsearch_query)
+            else:
+                self._bell()
+                self.line = ""  # empty query means no search result
+        elif keyinfo.keyname in ["return", "escape"]:
+            self._bell()
+            self.prompt = self.subsearch_oldprompt
+            self.process_keyevent_queue = self.process_keyevent_queue[:-1]
+            self._history.history_cursor = len(self._history.history)
+            if keyinfo.keyname == "escape":
+                self.l_buffer.set_line(self.subsearch_old_line)
+            return True
+        elif keyinfo.keyname:
+            pass
+        elif keytuple in revtuples:
+            self.subsearch_fun = self._history.reverse_search_history
+            self.subsearch_prompt = "reverse-i-search%d`%s': "
+            self.line = self.subsearch_fun(self.subsearch_query)
+        elif keytuple in fwdtuples:
+            self.subsearch_fun = self._history.forward_search_history
+            self.subsearch_prompt = "forward-i-search%d`%s': "
+            self.line = self.subsearch_fun(self.subsearch_query)
+        elif keyinfo.control == False and keyinfo.meta == False:
+            self.subsearch_query += keyinfo.char
+            self.line = self.subsearch_fun(self.subsearch_query)
+        else:
+            pass
+        self.prompt = self.subsearch_prompt % (
+            self._history.history_cursor,
+            self.subsearch_query,
+        )
+        self.l_buffer.set_line(self.line)
+
+    def _init_incremental_search(self, searchfun, init_event):
+        """Initialize search prompt."""
+        # log("init_incremental_search")
+        self.subsearch_fun = searchfun
+        self.subsearch_old_line = self.l_buffer.get_line_text()
+
+        queue = self.process_keyevent_queue
+        queue.append(self._process_incremental_search_keyevent)
+
+        self.subsearch_oldprompt = self.prompt
+
+        if (
+            self.previous_func != self.reverse_search_history
+            and self.previous_func != self.forward_search_history
+        ):
+            positioner = LinePositioner()
+            Point = positioner.Point()
+            self.subsearch_query = self.l_buffer[0:Point].get_line_text()
+            self.subsearch_query = self.l_buffer.point.get_line_text()
+
+        if self.subsearch_fun == self.reverse_search_history:
+            self.subsearch_prompt = "reverse-i-search%d`%s': "
+        else:
+            self.subsearch_prompt = "forward-i-search%d`%s': "
+
+        self.prompt = self.subsearch_prompt % (self._history.history_cursor, "")
+
+        if self.subsearch_query:
+            self.line = self._process_incremental_search_keyevent(init_event)
+        else:
+            self.line = ""
+
+
+class DigitArgumentMode(IncrementalSearchPromptMode):
+    def _process_digit_argument_keyevent(self, keyinfo):
+        # log("DigitArgumentMode.keyinfo %s" % keyinfo)
+        keytuple = keyinfo.tuple()
+        # log("DigitArgumentMode.keytuple %s %s" % (keyinfo, keytuple))
         if keyinfo.keyname in ["return"]:
             self.prompt = self._digit_argument_oldprompt
             self.process_keyevent_queue = self.process_keyevent_queue[:-1]
@@ -223,30 +239,47 @@ class DigitArgumentMode(object):
         log("arg-init %s %s" % (self.argument, keyinfo.char))
 
 
-class EmacsMode(
-    DigitArgumentMode, IncrementalSearchPromptMode, SearchPromptMode, basemode.BaseMode
-):
+class EmacsMode(DigitArgumentMode):
     mode = "emacs"
 
-    def __init__(self, rlobj):
-        basemode.BaseMode.__init__(self, rlobj)
-        IncrementalSearchPromptMode.__init__(self, rlobj)
-        SearchPromptMode.__init__(self, rlobj)
-        DigitArgumentMode.__init__(self, rlobj)
+    def __init__(
+        self,
+        rlobj,
+        previous_func=None,
+        prompt=">>> ",
+        _insert_verbatim=False,
+        next_meta=False,
+        _history_cursor=0,
+        _history_length=100,
+        history=None,
+        # history_filename=None,
+        debug=False,
+        *args,
+        **kwargs
+    ):
         self._keylog = lambda x, y: None
-        self.previous_func = None
-        self.prompt = ">>> "
-        self._insert_verbatim = False
-        self.next_meta = False  # True to force meta on next character
+        self.previous_func = previous_func
+        self.prompt = prompt
+        self._insert_verbatim = _insert_verbatim
+        self.debug = debug
+        # True to force meta on next character
+        self.next_meta = next_meta
 
         self.process_keyevent_queue = [self._process_keyevent]
+        self._history = LineHistory(
+            _history_cursor, _history_length, history,  # history_filename
+        )
+        super().__init__(rlobj, *args, *kwargs)
 
     def __repr__(self):
         return "<EmacsMode>"
 
     def add_key_logger(self, logfun):
-        """logfun should be function that takes disp_fun and line_""" """buffer object """
+        """logfun should be function that takes `disp_fun` and `line`_"""
         self._keylog = logfun
+
+    def nop(self, *args, **kwargs):
+        pass
 
     def process_keyevent(self, keyinfo):
         try:
@@ -260,13 +293,10 @@ class EmacsMode(
         return False
 
     def _process_keyevent(self, keyinfo):
-        """return True when line is final
-        """
+        """Return True when line is final."""
         # Process exit keys. Only exit on empty line
-        log("_process_keyevent <%s>" % keyinfo)
-
-        def nop(e):
-            pass
+        if self.debug:
+            log("_process_keyevent <%s>" % keyinfo)
 
         if self.next_meta:
             self.next_meta = False
@@ -285,12 +315,13 @@ class EmacsMode(
             if lineobj.EndOfLine(self.l_buffer) == 0:
                 raise EOFError
         if keyinfo.keyname or keyinfo.control or keyinfo.meta:
-            default = nop
+            default = self.nop
         else:
             default = self.self_insert
         dispatch_func = self.key_dispatch.get(keytuple, default)
 
-        log("readline from keyboard:<%s,%s>" % (keytuple, dispatch_func))
+        if self.debug:
+            log("readline from keyboard:<%s,%s>" % (keytuple, dispatch_func))
 
         r = None
         if dispatch_func:
@@ -303,15 +334,13 @@ class EmacsMode(
 
     # History commands
     def previous_history(self, e):  # (C-p)
-        """Move back through the history list, fetching the previous
-        command. """
+        """Move back through the history list, fetching the previous command."""
         self._history.previous_history(self.l_buffer)
         self.l_buffer.point = lineobj.EndOfLine
         self.finalize()
 
     def next_history(self, e):  # (C-n)
-        """Move forward through the history list, fetching the next
-        command. """
+        """Move forward through the history list, fetching the next command."""
         self._history.next_history(self.l_buffer)
         self.finalize()
 
@@ -321,8 +350,7 @@ class EmacsMode(
         self.finalize()
 
     def end_of_history(self, e):  # (M->)
-        """Move to the end of the input history, i.e., the line currently
-        being entered."""
+        """Move to the end of the input history."""
         self._history.end_of_history(self.l_buffer)
         self.finalize()
 
@@ -345,21 +373,29 @@ class EmacsMode(
         """Search forward through the history for the string of characters
         between the start of the current line and the point. This is a
         non-incremental search. By default, this command is unbound."""
+        # everything about this feels like it should be implemented in the
+        # history class
         if self.previous_func and hasattr(self._history, self.previous_func.__name__):
             self._history.lastcommand = getattr(
                 self._history, self.previous_func.__name__
             )
         else:
             self._history.lastcommand = None
+        # Up until here
+
         q = self._history.history_search_forward(self.l_buffer)
+        if q is None:
+            return   # TODO: raise?
         self.l_buffer = q
         self.l_buffer.point = q.point
         self.finalize()
 
     def history_search_backward(self, e):  # ()
         """Search backward through the history for the string of characters
-        between the start of the current line and the point. This is a
-        non-incremental search. By default, this command is unbound."""
+        between the start of the current line and the point.
+
+        This is a non-incremental search. By default, this command is unbound.
+        """
         if self.previous_func and hasattr(self._history, self.previous_func.__name__):
             self._history.lastcommand = getattr(
                 self._history, self.previous_func.__name__
@@ -367,6 +403,8 @@ class EmacsMode(
         else:
             self._history.lastcommand = None
         q = self._history.history_search_backward(self.l_buffer)
+        if q is None:
+            return   # TODO: raise?
         self.l_buffer = q
         self.l_buffer.point = q.point
         self.finalize()
@@ -644,7 +682,7 @@ class EmacsMode(
         pass
         # Should not finalize
 
-    def init_editing_mode(self, e):  # (C-e)
+    def init_editing_mode(self, *args):  # (C-e)
         """Create key bindings."""
         self._bind_exit_key("Control-d")
         self._bind_exit_key("Control-z")
@@ -702,10 +740,8 @@ class EmacsMode(
         self._bind_key("Control-Left", self.backward_word)
         self._bind_key("Shift-Right", self.forward_char_extend_selection)
         self._bind_key("Shift-Left", self.backward_char_extend_selection)
-        self._bind_key("Shift-Control-Right",
-                       self.forward_word_end_extend_selection)
-        self._bind_key("Shift-Control-Left",
-                       self.backward_word_extend_selection)
+        self._bind_key("Shift-Control-Right", self.forward_word_end_extend_selection)
+        self._bind_key("Shift-Control-Left", self.backward_word_extend_selection)
         self._bind_key("Shift-Home", self.beginning_of_line_extend_selection)
         self._bind_key("Shift-End", self.end_of_line_extend_selection)
         self._bind_key("numpad0", self.self_insert)
@@ -723,7 +759,7 @@ class EmacsMode(
         self._bind_key("multiply", self.self_insert)
         self._bind_key("divide", self.self_insert)
         self._bind_key("vk_decimal", self.self_insert)
-        log("RUNNING INIT EMACS")
+        # log("RUNNING INIT EMACS")
         for i in range(0, 10):
             self._bind_key("alt-%d" % i, self.digit_argument)
         self._bind_key("alt--", self.digit_argument)

@@ -48,8 +48,7 @@ class NotEmacsMode(basemode.BaseMode):
                 if lineobj.EndOfLine(self.l_buffer) == 0:
                     raise EOFError
 
-            dispatch_func = self.key_dispatch.get(
-                event.keyinfo, self.self_insert)
+            dispatch_func = self.key_dispatch.get(event.keyinfo, self.self_insert)
             log("readline from keyboard:%s" % (event.keyinfo,))
             r = None
             if dispatch_func:
@@ -92,8 +91,7 @@ class NotEmacsMode(basemode.BaseMode):
 
         log("in readline: %s" % self.paste_line_buffer)
         if len(self.paste_line_buffer) > 0:
-            self.l_buffer = lineobj.ReadlineTextBuffer(
-                self.paste_line_buffer[0])
+            self.l_buffer = lineobj.ReadlineTextBuffer(self.paste_line_buffer[0])
             self._update_line()
             self.paste_line_buffer = self.paste_line_buffer[1:]
             c.write("\r\n")

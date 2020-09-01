@@ -3,18 +3,14 @@
 from __future__ import print_function, unicode_literals, absolute_import
 
 try:
-    import pyreadline.rlmain
+    from pyreadline import rlmain
 
+    # don't do this anymore it raises a Deprecationwarning
     # pyreadline.rlmain.config_path=r"c:\xxx\pyreadlineconfig.ini"
     import readline
     import atexit
     import pyreadline.unicode_helper
 
-    #
-    #
-    # Normally the codepage for pyreadline is set to be sys.stdout.encoding
-    # if you need to change this uncomment the following line
-    # pyreadline.unicode_helper.pyreadline_codepage="utf8"
 except ImportError:
     print("Module readline not available.")
 else:

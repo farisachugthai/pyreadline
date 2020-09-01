@@ -150,8 +150,8 @@ setup(
     data_files=[("doc", glob.glob("doc/*")),],
     cmdclass=cmd_class,
     python_requires=">=2.6.0",
-    requires=["setuptools", "pywin32"],
+    requires=["setuptools", "pywin32", "wheel"],
     # They actually really don't but hey
     tests_require=["pytest"],
-    extras_require={"docs": ["sphinx"]},
+    extras_require={"docs": ["sphinx"], "test": ["pytest"]},
 )

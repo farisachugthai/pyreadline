@@ -9,6 +9,7 @@
 #  the file COPYING, distributed as part of this software.
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
+import abc
 import logging
 import os
 import re
@@ -18,19 +19,29 @@ import sys
 import traceback
 
 from pyreadline import clipboard
-
-# from pyreadline import logger
+from pyreadline.console.console import Console
 from pyreadline.error import ReadlineError
-from pyreadline.lineeditor import history
 from pyreadline.lineeditor import lineobj
-from pyreadline.logger import log
+from pyreadline.lineeditor.history import LineHistory
 from pyreadline.keysyms.common import make_KeyPress_from_keydescr
 from pyreadline.py3k_compat import callable
 from pyreadline.unicode_helper import ensure_str, ensure_unicode
 
+logging.basicConfig()
+
+class BaseModeABC(abc.ABC):
+    # honestly if for no other reason than accounting
+
+    @property
+    def _print_prompt(self):
+        return self.__print_prompt
 
 class BaseMode(object):
     """The base class that Emacs, Vi and NotEmacs inherit from."""
+
+    @property
+    def bell_style(self):
+        return self._bell_style
 
     mode = "base"
 
@@ -46,12 +57,34 @@ class BaseMode(object):
         begidx=0,
         endidx=0,
         tabstop=4,
+        startup_hook=None,
+        pre_input_hook=None,
+        prompt=">>> ",
+        *args,
+        **kwargs
     ):
         """Initialize the class. Still adding more keyword arguments.
 
         Parameters
         ----------
-        TODO
+        rlobj :
+        argument :
+        prevargument :
+        show_all_if_ambiguous :
+        mark_directories :
+        complete_filesystem :
+        completer :
+        begidx :
+        endidx :
+        tabstop :
+        startup_hook :
+        pre_input_hook :
+        args :
+        kwargs :
+        prompt : str
+        ``**kwargs`` : dict, optional
+            Passed to `LineHistory`.
+
         """
         self.rlobj = rlobj
         self.exit_dispatch = {}
@@ -59,7 +92,7 @@ class BaseMode(object):
         self.argument = argument
         self.prevargument = prevargument
         self.l_buffer = lineobj.ReadLineTextBuffer("")
-        self._history = history.LineHistory()
+        self._history = LineHistory(**kwargs)
         self.completer_delims = r" \t\n\"\\'`@$><=;|&{("
         self.show_all_if_ambiguous = show_all_if_ambiguous
         self.mark_directories = mark_directories
@@ -68,11 +101,14 @@ class BaseMode(object):
         self.begidx = begidx
         self.endidx = endidx
         self.tabstop = tabstop
-        self.startup_hook = None
-        self.pre_input_hook = None
+        self.startup_hook = startup_hook
+        self.pre_input_hook = pre_input_hook
         self.first_prompt = True
         self.cursor_size = 25
-        self.prompt = ">>> "
+        self.prompt = prompt
+        # why is this a thing? i have no idea
+        self._print_prompt = None
+        self.__print_prompt = None
 
         # Paste settings
         # assumes data on clipboard is path if shorter than 300 characters and doesn't contain \t or \n
@@ -88,7 +124,7 @@ class BaseMode(object):
         self._sub_modes = []
 
     def __repr__(self):
-        return "<BaseMode>"
+        return repr("<self.__class__.__name__>")
 
     def _gs(self, x):
         # Might be a way of defining a property? wow.
@@ -115,6 +151,8 @@ class BaseMode(object):
         raise NotImplementedError
 
     def readline_setup(self, prompt=""):
+        if self.l_buffer is None:
+            self.l_buffer = lineobj.ReadLineTextBuffer("")
         self.l_buffer.selection_mark = -1
         if self.first_prompt:
             self.first_prompt = False
@@ -144,21 +182,24 @@ class BaseMode(object):
 
     # used in readline
     ctrl_c_tap_time_interval = property("ctrl_c_tap_time_interval")
-    allow_ctrl_c = property(("allow_ctrl_c"))
-    _print_prompt = property(("_print_prompt"))
-    _update_line = property(("_update_line"))
-    console = property(("console"))
+    allow_ctrl_c = property("allow_ctrl_c")
+
+    @property
+    def console(self):
+        return self._console
+
+    _update_line = property("_update_line")
+    console = property((Console))
     prompt_begin_pos = property(("prompt_begin_pos"))
     prompt_end_pos = property(("prompt_end_pos"))
 
     # used in completer _completions
     #    completer_delims=property(*s("completer_delims"))
-    _bell = property(("_bell"))
-    bell_style = property(("bell_style"))
+    bell_style = property("bell_style")
 
     # used in emacs
-    _clear_after = property(("_clear_after"))
-    _update_prompt_pos = property(("_update_prompt_pos"))
+    _clear_after = property("_clear_after")
+    _update_prompt_pos = property("_update_prompt_pos")
 
     def finalize(self):
         """Every bindable command should call this function for cleanup.
@@ -175,20 +216,17 @@ class BaseMode(object):
         # This is a dumb way of doing this but goddamn is this method annoying
         if log_level is None:
             return
-        out = ["%-20s: %s" %
-               ("show all if ambigous", self.show_all_if_ambiguous)]
-        out.append("%-20s: %s" % ("mark_directories", self.mark_directories))
-        out.append("%-20s: %s" % ("bell_style", self.bell_style))
-        out.append("------------- key bindings ------------")
+        out = ["%-20s: %s" % ("show all if ambigous", self.show_all_if_ambiguous),
+               "%-20s: %s" % ("mark_directories", self.mark_directories), "%-20s: %s" % ("bell_style", self.bell_style),
+               "------------- key bindings ------------"]
         tablepat = "%-7s %-7s %-7s %-15s %-15s "
-        out.append(tablepat %
-                   ("Control", "Meta", "Shift", "Keycode/char", "Function"))
+        out.append(tablepat % ("Control", "Meta", "Shift", "Keycode/char", "Function"))
         bindings = [
             (k[0], k[1], k[2], k[3], v.__name__) for k, v in self.key_dispatch.items()
         ]
         bindings.sort()
         for key in bindings:
-            out.append(tablepat % (key))
+            out.append(tablepat % key)
         return out
 
     def _bind_key(self, key, func):
@@ -210,7 +248,7 @@ class BaseMode(object):
                 % (key, func, type(func), type(self._bind_key))
             )
         keyinfo = make_KeyPress_from_keydescr(key.lower()).tuple()
-        log(">>>%s -> %s<<<" % (keyinfo, func.__name__), logging.DEBUG)
+        logging.debug(">>>%s -> %s<<<" % (keyinfo, func.__name__))
         self.key_dispatch[keyinfo] = func
 
     def _bind_exit_key(self, key):
@@ -244,7 +282,7 @@ class BaseMode(object):
                     self.begidx += 1
                     break
             text = ensure_str("".join(buf[self.begidx: self.endidx]))
-            log('complete text="%s"' % ensure_unicode(text))
+            logging.debug('complete text="%s"' % ensure_unicode(text))
             i = 0
             while 1:
                 try:
@@ -258,8 +296,9 @@ class BaseMode(object):
                     completions.append(r)
                 else:
                     pass
-            log("text completions=<%s>" %
-                list(map(ensure_unicode, completions)))
+            logging.debug(
+                "text completions=<%s>" % list(map(ensure_unicode, completions))
+            )
         if (self.complete_filesystem == "on") and not completions:
             # get the filename to complete
             while self.begidx > 0:
@@ -268,13 +307,8 @@ class BaseMode(object):
                     self.begidx += 1
                     break
             text = ensure_str("".join(buf[self.begidx: self.endidx]))
-            log('file complete text="%s"' % ensure_unicode(text))
-            completions = list(
-                map(
-                    ensure_unicode,
-                    glob.glob(os.path.expanduser(text) + "*".encode("ascii")),
-                )
-            )
+            logging.debug('file complete text="%s"' % ensure_unicode(text))
+            completions = glob.glob(os.path.expanduser(text) + "*".encode("ascii"))
             if self.mark_directories == "on":
                 mc = []
                 for f in completions:
@@ -283,7 +317,7 @@ class BaseMode(object):
                     else:
                         mc.append(f)
                 completions = mc
-            log("fnames=<%s>" % list(map(ensure_unicode, completions)))
+            logging.debug("fnames=<%s>" % list(map(ensure_unicode, completions)))
         return completions
 
     def _display_completions(self, completions):
@@ -318,8 +352,7 @@ class BaseMode(object):
                 rep = [c for c in cprefix]
                 point = self.l_buffer.point
                 self.l_buffer[self.begidx: self.endidx] = rep
-                self.l_buffer.point = point + \
-                    len(rep) - (self.endidx - self.begidx)
+                self.l_buffer.point = point + len(rep) - (self.endidx - self.begidx)
             if len(completions) > 1:
                 if self.show_all_if_ambiguous == "on":
                     self._display_completions(completions)
@@ -544,7 +577,7 @@ class BaseMode(object):
         self.l_buffer.backward_delete_char(self.argument_reset)
         self.finalize()
 
-    def backward_delete_word(self, e):  # (Control-Rubout)
+    def backward_delete_word(self, *args):  # (Control-Rubout)
         """Delete the character behind the cursor. A numeric argument means
         to kill the characters instead of deleting them."""
         self.l_buffer.backward_delete_word(self.argument_reset)
@@ -580,7 +613,7 @@ class BaseMode(object):
         if self.enable_win32_clipboard:
             txt = clipboard.get_clipboard_text_and_convert(False)
             txt = txt.split("\n")[0].strip("\r").strip("\n")
-            log("paste: >%s<" % list(map(ord, txt)))
+            logging.debug("paste: >%s<" % list(map(ord, txt)))
             self.insert_text(txt)
         self.finalize()
 
@@ -598,7 +631,7 @@ class BaseMode(object):
                 self.insert_text(t[0])
                 self.add_history(self.l_buffer.copy())
                 self.paste_line_buffer = t[1:]
-                log("multi: >%s<" % self.paste_line_buffer)
+                logging.debug("multi: >%s<" % self.paste_line_buffer)
                 return True
             else:
                 return False
@@ -658,6 +691,12 @@ class BaseMode(object):
         print(txt)
         self._print_prompt()
         self.finalize()
+
+    def nop(self):
+        pass
+
+    def _bell(self):
+        pass
 
 
 def commonprefix(m):

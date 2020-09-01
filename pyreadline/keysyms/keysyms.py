@@ -7,14 +7,14 @@
 #  the file COPYING, distributed as part of this software.
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
-from . import winconstants as c32
-from pyreadline.logger import log
 from ctypes import windll
 import ctypes
 
 # table for translating virtual keys to X windows key symbols
+from pyreadline.logger import log
+from pyreadline.keysyms import winconstants as c32
+from pyreadline.keysyms.common import KeyPress
 
-from .common import KeyPress
 
 code2sym_map = {
     c32.VK_CANCEL: "cancel",
@@ -132,7 +132,3 @@ def make_KeyPress(char, state, keycode):
         keyname = ""
     out = KeyPress(char, shift, control, meta, keyname)
     return out
-
-
-if __name__ == "__main__":
-    import startup

@@ -6,12 +6,15 @@
 #  the file COPYING, distributed as part of this software.
 # *****************************************************************************
 from __future__ import print_function, unicode_literals, absolute_import
-from pyreadline.modes.emacs import *
+
+import unittest
+
+from pyreadline.lineeditor import history
+
+# from pyreadline.modes.emacs import *
 from pyreadline import keysyms
 from pyreadline.lineeditor import lineobj
 from pyreadline.keysyms.common import make_KeyPress_from_keydescr
-
-import unittest
 
 
 class MockReadline:
@@ -75,7 +78,9 @@ def keytext_to_keyinfo_and_event(keytext):
 
 
 # override runTests from from main in unittest to remove sys.exit call
-class Tester(unittest.TestProgram):
+# you shouldn't name it a word starting with Test tho
+
+class WithoutSysExit(unittest.TestProgram):
     def runTests(self):
         if self.testRunner is None:
             self.testRunner = unittest.TextTestRunner(verbosity=self.verbosity)

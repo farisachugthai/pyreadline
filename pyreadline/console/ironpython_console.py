@@ -43,35 +43,6 @@ from pyreadline.keysyms import (
 from pyreadline.logger import log
 from pyreadline.console.event import Event
 
-try:
-    # Wrap this in a try/except so non-ironpython users can autodoc it
-    import IronPythonConsole
-    import System
-    import clr
-except ImportError:
-    pass
-else:
-    clr.AddReferenceToFileAndPath(sys.executable)
-    color = System.ConsoleColor
-    ansicolor = {
-        "0;30": color.Black,
-        "0;31": color.DarkRed,
-        "0;32": color.DarkGreen,
-        "0;33": color.DarkYellow,
-        "0;34": color.DarkBlue,
-        "0;35": color.DarkMagenta,
-        "0;36": color.DarkCyan,
-        "0;37": color.DarkGray,
-        "1;30": color.Gray,
-        "1;31": color.Red,
-        "1;32": color.Green,
-        "1;33": color.Yellow,
-        "1;34": color.Blue,
-        "1;35": color.Magenta,
-        "1;36": color.Cyan,
-        "1;37": color.White,
-    }
-
 winattr = {
     "black": 0,
     "darkgray": 0 + 8,
@@ -420,8 +391,6 @@ def make_event_from_keydescr(keydescr):
     return e
 
 
-CTRL_C_EVENT = make_event_from_keydescr("Control-c")
-
 
 def install_readline(hook):
     def hook_wrap():
@@ -450,6 +419,38 @@ def install_readline(hook):
 
 
 if __name__ == "__main__":
+
+    try:
+        # Wrap this in a try/except so non-ironpython users can autodoc it
+        import IronPythonConsole
+        import System
+        import clr
+    except ImportError:
+        pass
+    else:
+        clr.AddReferenceToFileAndPath(sys.executable)
+        color = System.ConsoleColor
+        ansicolor = {
+            "0;30": color.Black,
+            "0;31": color.DarkRed,
+            "0;32": color.DarkGreen,
+            "0;33": color.DarkYellow,
+            "0;34": color.DarkBlue,
+            "0;35": color.DarkMagenta,
+            "0;36": color.DarkCyan,
+            "0;37": color.DarkGray,
+            "1;30": color.Gray,
+            "1;31": color.Red,
+            "1;32": color.Green,
+            "1;33": color.Yellow,
+            "1;34": color.Blue,
+            "1;35": color.Magenta,
+            "1;36": color.Cyan,
+            "1;37": color.White,
+        }
+
+    CTRL_C_EVENT = make_event_from_keydescr("Control-c")
+
     c = Console(0)
     sys.stdout = c
     sys.stderr = c

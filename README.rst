@@ -1,8 +1,15 @@
-==========
 pyreadline
 ==========
 
-The pyreadline package is a python implementation of GNU readline functionality.
+Introduction
+============
+
+Pyreadline is a package inspired by GNU readline which aims to improve the
+command line editing experience. In most UNIX based pythons GNU readline is
+available and used by python but on windows this is not the case. A readline
+like python library can also be useful when implementing commandline like
+interfaces in GUIs. The use of pyreadline for anything but the windows
+console is still under development.
 
 It is based on the UNC readline package by Gary Bishop which in turn is
 based on the `ctypes` module in the standard library.
@@ -11,6 +18,44 @@ It is not complete. It has been tested for use with Windows 2000 and Windows XP
 as well as Windows 10.
 
 Version 2.0 runs on Python 2.6, 2.7, and 3+ using the same code.
+
+Installation
+=============
+
+The pyreadline package is based on the readline package by Gary Bishop. It is
+not a complete replacement for GNU readline. The pyreadline package is
+currently only for the win32 platform. The pyreadline package tries to improve
+the integration with the win32 platform by including such things as copy
+paste.
+
+
+Dependencies
+------------
+
+  * PyWin32, the win32 Python extensions from
+    http://starship.python.net/crew/mhammond.
+
+  * This in turn requires Tomas Heller's ctypes from
+    http://starship.python.net/crew/theller/ctypes.
+
+
+Current release version
+-----------------------
+
+Get the installer for the current installer at https://pypi.python.org/pypi/pyreadline/
+
+
+Development version
+-------------------
+
+The development is hosted at https://github.com/pyreadline/pyreadline
+
+The current trunk version can be cloned with git, :command:`git clone
+https://github.com/pyreadline/pyreadline.git`.
+
+Install with the usual :command:`python setup.py install` from the pyreadline
+folder.
+
 
 Features
 ========
@@ -44,6 +89,13 @@ Features
 The latest development version is always available at the GitHub `repository`_.
 
 .. _repository: https://github.com/pyreadline/pyreadline
+
+.. _history:
+
+History
+-------
+
+The pyreadline package is based on the ctypes based UNC readline package by Gary Bishop.
 
 
 pyreadline copyright and licensing notes

@@ -8,7 +8,6 @@
 # *****************************************************************************
 
 from __future__ import print_function, unicode_literals, absolute_import
-from platform import system
 
 # So unless this is definitely necessary... can we not?
 # Glob imports at the top of packages make things very interconnected
@@ -20,7 +19,12 @@ from platform import system
 # from . import logger, clipboard, lineeditor, modes, console
 # from . import unicode_helper
 
-# _S = system()
-# if "windows" != _S.lower():
-#     raise RuntimeError("pyreadline is for Windows only, not {}.".format(_S))
-# del system, _S
+# Here's basically all of the important classes in the repo
+
+# from .console.console import Console
+# from .lineeditor.history import LineHistory
+# from .lineeditor.lineobj import ReadLineTextBuffer
+
+# from .modes.emacs import EmacsMode
+
+# from .rlmain import Readline

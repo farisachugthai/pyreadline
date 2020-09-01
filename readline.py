@@ -3,7 +3,9 @@
 # necessary for rlcompleter since it relies on the existance
 # of a readline module
 from __future__ import print_function, unicode_literals, absolute_import
-from pyreadline.rlmain import Readline
+import logging
+import sys
+import time
 
 __all__ = [
     "parse_and_bind",
@@ -32,26 +34,32 @@ __all__ = [
     "callback_read_char",
 ]  # Some other objects are added below
 
+logging.basicConfig()
+start = time.perf_counter()
 
-# create a Readline object to contain the state
-rl = Readline()
 
-if rl.disable_readline:
+# if rl.disable_readline:
 
-    def dummy(completer=""):
-        pass
+#     def dummy(completer=""):
+#         pass
 
-    for funk in __all__:
-        globals()[funk] = dummy
-else:
+#     for funk in __all__:
+#         globals()[funk] = dummy
 
-    def GetOutputFile():
+#     sys.exit(0)
+# else:
+try:
+    from pyreadline.rlmain import Readline
+    from pyreadline import console
+
+    # create a Readline object to contain the state
+    rl = Readline()
+
+    def GetOutputFile(rl):
         """Return the console object used by readline so that it can be used for printing in color."""
         return rl.console
 
     __all__.append("GetOutputFile")
-
-    import pyreadline.console as console
 
     # make these available so this looks like the python readline module
     read_init_file = rl.read_init_file
@@ -85,5 +93,13 @@ else:
     callback_read_char = rl.callback_read_char
 
     console.install_readline(rl.readline)
+except Exception:
+    raise
 
-__all__.append("rl")
+# Why.
+# __all__.append("rl")
+
+end_time = time.perf_counter()
+logging.debug("Readline setup complete. %d" % (end_time - start))
+
+del (end_time, start, rl)
