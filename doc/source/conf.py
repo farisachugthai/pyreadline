@@ -11,12 +11,13 @@
 # All configuration values have a default value; values that are commented out
 # serve to show the default value.
 
-import sys, os, pyreadline.release
+import sys
+import os
 
 # If your extensions are in another directory, add it here. If the directory
 # is relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
-#sys.path.append(os.path.abspath('some/directory'))
+sys.path.append(os.path.abspath('../..'))
 
 # General configuration
 # ---------------------
@@ -42,9 +43,11 @@ copyright = '2008, J. Stenarson'
 # other places throughout the built documents.
 #
 # The short X.Y version.
-version = pyreadline.release.version.rsplit(".",1)[0]
+# version = pyreadline.release.version.rsplit(".",1)[0]
+version = "2.1.0"
 # The full version, including alpha/beta/rc tags.
-release = pyreadline.release.version
+# release = pyreadline.release.version
+release = "2.1.0"
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -60,7 +63,7 @@ today_fmt = '%B %d, %Y'
 #exclude_dirs = []
 
 # The reST default role (used for this markup: `text`) to use for all documents.
-#default_role = None
+default_role = "py:obj"
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 #add_function_parentheses = True
@@ -157,7 +160,7 @@ htmlhelp_basename = 'pyreadlinedoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
 latex_documents = [
-  ('index', 'pyreadline.tex', 'pyreadline Documentation', 'J. Stenarson', 'manual'),
+    ('index', 'pyreadline.tex', 'pyreadline Documentation', 'J. Stenarson', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
